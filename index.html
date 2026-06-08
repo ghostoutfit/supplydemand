@@ -50,20 +50,13 @@ body {
   justify-content: center;
   gap: 20px;
 }
-
 .bstat { display: flex; flex-direction: column; align-items: center; gap: 1px; }
 .bstat .lbl { font-size: 9px; color: var(--dim); letter-spacing: .06em; text-transform: uppercase; }
 .bstat .val { font-weight: 800; font-size: 16px; font-variant-numeric: tabular-nums; }
 .sv { color: var(--supply); }
 .dv { color: var(--demand); }
 
-/* Gauge */
-#gauge-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  position: relative;
-}
+#gauge-wrap { display: flex; flex-direction: column; align-items: center; }
 #gauge { overflow: visible; display: block; }
 
 @keyframes pulse-red {
@@ -97,7 +90,11 @@ body {
 .pal-head {
   font-size: 9px; font-weight: 800;
   letter-spacing: .1em; text-transform: uppercase;
-  color: var(--dim); margin-bottom: 7px;
+  color: var(--dim); margin-bottom: 5px;
+}
+.pal-note {
+  font-size: 9px; color: var(--dim);
+  font-style: italic; margin-bottom: 8px; line-height: 1.35;
 }
 .pal-item {
   display: flex; align-items: center; gap: 7px;
@@ -131,12 +128,46 @@ body {
 #lines {
   position: absolute; inset: 0;
   width: 100%; height: 100%;
-  pointer-events: none;
-  overflow: visible;
+  pointer-events: none; overflow: visible;
 }
 .conn-line { stroke: #3b4166; stroke-width: 2; fill: none; stroke-dasharray: 6 4; }
 .conn-line.active { stroke: var(--accent); opacity: .55; }
 .conn-line.off    { stroke: #252840; opacity: .35; }
+/* Supply line is always active */
+.conn-line.supply-line { stroke: var(--supply); opacity: .4; stroke-dasharray: 5 3; }
+
+/* ── Supply zone ────────────────────────────────────────────────── */
+#supply-zone {
+  position: absolute;
+  border: 1.5px dashed rgba(34,197,94,.35);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: border-color .15s;
+}
+#supply-zone.dragover { border-color: var(--supply); background: rgba(34,197,94,.03); }
+
+#sz-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 5px 10px;
+  background: rgba(26,29,39,.9);
+  border-bottom: 1px solid rgba(34,197,94,.15);
+  flex-shrink: 0;
+}
+#sz-title {
+  font-size: 10px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase;
+  color: rgba(34,197,94,.7);
+}
+#sz-total { font-size: 9px; color: var(--supply); font-weight: 600; }
+#sz-body { flex: 1; position: relative; min-height: 0; }
+#sz-hint {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; color: rgba(34,197,94,.25);
+  pointer-events: none; transition: opacity .3s;
+}
 
 /* ── Neighborhoods ─────────────────────────────────────────────── */
 .nhood {
@@ -162,19 +193,15 @@ body {
   font-size: 10px; font-weight: 700;
   letter-spacing: .06em; text-transform: uppercase; color: var(--dim);
 }
-.nhood-tally { font-size: 9px; display: flex; gap: 8px; }
-.nhood-tally .ns { color: var(--supply); font-weight: 600; }
-.nhood-tally .nd { color: var(--demand); font-weight: 600; }
+.nhood-tally { font-size: 9px; color: var(--demand); font-weight: 600; }
 
 .nhood-body { flex: 1; position: relative; min-height: 0; }
-
 .nhood-hint {
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
   font-size: 10px; color: rgba(100,116,139,.35);
   pointer-events: none; transition: opacity .3s;
 }
-
 .nhood-dragover { border-color: var(--accent) !important; }
 .nhood-dragover .nhood-body { background: rgba(99,102,241,.04); }
 
@@ -229,8 +256,7 @@ body {
 .sub-toggle::before {
   content: ''; width: 12px; height: 12px;
   border-radius: 50%; background: #fff;
-  position: absolute; top: 3px;
-  transition: left .2s;
+  position: absolute; top: 3px; transition: left .2s;
 }
 .sub-toggle.on::before  { left: 19px; }
 .sub-toggle.off::before { left: 3px; }
@@ -319,32 +345,20 @@ body {
       <span class="lbl">Supply</span>
       <span class="val sv" id="tot-s">0 kW</span>
     </div>
-
     <div id="gauge-wrap">
-      <!-- SVG gauge: 180° semicircle, CX=90 CY=80 R=68 -->
       <svg id="gauge" viewBox="0 0 180 92" width="180" height="92">
-        <!-- Background arc (full 0→1) -->
         <path id="g-bg" fill="none" stroke="#1e2235" stroke-width="12" stroke-linecap="round"/>
-        <!-- Demand target zone (subtle arc 0→demand) -->
         <path id="g-demand-zone" fill="none" stroke-width="12" stroke-linecap="round" stroke="#2a1f10" opacity=".8"/>
-        <!-- Supply fill arc (0→supply) -->
         <path id="g-fill" fill="none" stroke-width="12" stroke-linecap="round"/>
-        <!-- Demand tick mark (inner+outer) -->
         <line id="g-dtick" stroke-width="2.5" stroke-linecap="round"/>
-        <!-- Demand label -->
         <text id="g-dlbl" font-size="7.5" font-weight="700" fill="#94a3b8" text-anchor="middle" letter-spacing=".04em"/>
-        <!-- Needle -->
         <line id="g-needle" stroke-width="2" stroke-linecap="round" x1="90" y1="80"/>
-        <!-- Needle hub -->
         <circle cx="90" cy="80" r="4" fill="#e2e8f0"/>
-        <!-- 0 label -->
         <text x="14" y="88" font-size="8" fill="#475569" text-anchor="middle">0</text>
-        <!-- Max label (updated dynamically) -->
         <text id="g-max-lbl" x="166" y="88" font-size="8" fill="#475569" text-anchor="middle"/>
       </svg>
       <div id="badge" class="balanced">—</div>
     </div>
-
     <div class="bstat">
       <span class="lbl">Demand</span>
       <span class="val dv" id="tot-d">0 kW</span>
@@ -357,6 +371,7 @@ body {
   <div id="palette">
     <div class="pal-section">
       <div class="pal-head">Supply</div>
+      <div class="pal-note">These sources are scaled down to fit demand.</div>
       <div id="sup-pal"></div>
     </div>
     <div class="pal-section">
@@ -368,33 +383,46 @@ body {
   <div id="workspace">
     <svg id="lines"></svg>
 
+    <!-- Supply zone (left) -->
+    <div id="supply-zone">
+      <div id="sz-header">
+        <span id="sz-title">Power Sources</span>
+        <span id="sz-total">0 kW</span>
+      </div>
+      <div id="sz-body">
+        <div id="sz-hint">Drop sources here</div>
+      </div>
+    </div>
+
+    <!-- Neighborhoods (right, stacked) -->
     <div class="nhood" id="n-a" data-nid="a">
       <div class="nhood-header">
         <span class="nhood-name">Neighborhood A</span>
-        <div class="nhood-tally"><span class="ns" id="na-s">0 kW</span><span class="nd" id="na-d">0 kW</span></div>
+        <span class="nhood-tally" id="na-d">0 kW</span>
       </div>
-      <div class="nhood-body" id="nb-a"><div class="nhood-hint">Drop items here</div></div>
+      <div class="nhood-body" id="nb-a"><div class="nhood-hint">Drop demand items here</div></div>
       <div class="nhood-overlay">DISCONNECTED</div>
     </div>
 
     <div class="nhood" id="n-b" data-nid="b">
       <div class="nhood-header">
         <span class="nhood-name">Neighborhood B</span>
-        <div class="nhood-tally"><span class="ns" id="nb-s">0 kW</span><span class="nd" id="nb-d">0 kW</span></div>
+        <span class="nhood-tally" id="nb-d">0 kW</span>
       </div>
-      <div class="nhood-body" id="nb-b"><div class="nhood-hint">Drop items here</div></div>
+      <div class="nhood-body" id="nb-b"><div class="nhood-hint">Drop demand items here</div></div>
       <div class="nhood-overlay">DISCONNECTED</div>
     </div>
 
     <div class="nhood" id="n-c" data-nid="c">
       <div class="nhood-header">
         <span class="nhood-name">Neighborhood C</span>
-        <div class="nhood-tally"><span class="ns" id="nc-s">0 kW</span><span class="nd" id="nc-d">0 kW</span></div>
+        <span class="nhood-tally" id="nc-d">0 kW</span>
       </div>
-      <div class="nhood-body" id="nb-c"><div class="nhood-hint">Drop items here</div></div>
+      <div class="nhood-body" id="nb-c"><div class="nhood-hint">Drop demand items here</div></div>
       <div class="nhood-overlay">DISCONNECTED</div>
     </div>
 
+    <!-- Substation (center) -->
     <div id="substation">
       <div class="sub-title">⚡ Main Substation</div>
       <div class="sub-body">
@@ -427,15 +455,15 @@ body {
 </div>
 
 <script>
-// ─── Definitions (all kW) ─────────────────────────────────────────────────────
+// ─── Definitions (all kW, supply scaled down to fit demand) ──────────────────
 
 const SUPPLY = {
-  coal:    { label: 'Coal Plant',    icon: '🏭', baseKW: 500000,   spec: '500,000 kW',   tags: [] },
-  nuclear: { label: 'Nuclear Plant', icon: '⚛️',  baseKW: 1000000,  spec: '1,000,000 kW', tags: [] },
-  gas:     { label: 'Gas Plant',     icon: '🔥', baseKW: 400000,   spec: '400,000 kW',   tags: [] },
-  wind:    { label: 'Wind Farm',     icon: '🌬️', baseKW: 150000,   spec: '150,000 kW',   tags: ['wind','renewable'] },
-  solar:   { label: 'Solar Farm',    icon: '☀️', baseKW: 200000,   spec: '200,000 kW',   tags: ['solar','renewable'] },
-  hydro:   { label: 'Hydro Dam',     icon: '💧', baseKW: 300000,   spec: '300,000 kW',   tags: ['hydro'] },
+  solar:   { label: 'Solar Farm',    icon: '☀️', baseKW: 10,  spec: '10 kW',  tags: ['solar','renewable'] },
+  wind:    { label: 'Wind Farm',     icon: '🌬️', baseKW: 8,   spec: '8 kW',   tags: ['wind','renewable'] },
+  hydro:   { label: 'Hydro Dam',     icon: '💧', baseKW: 15,  spec: '15 kW',  tags: ['hydro'] },
+  gas:     { label: 'Gas Plant',     icon: '🔥', baseKW: 20,  spec: '20 kW',  tags: [] },
+  coal:    { label: 'Coal Plant',    icon: '🏭', baseKW: 25,  spec: '25 kW',  tags: [] },
+  nuclear: { label: 'Nuclear Plant', icon: '⚛️',  baseKW: 50,  spec: '50 kW',  tags: [] },
 };
 
 const DEMAND = {
@@ -483,24 +511,24 @@ const CONDITIONS = [
 
 // ─── State ────────────────────────────────────────────────────────────────────
 
+// zone: 'supply' for supply zone items, 'a'/'b'/'c' for neighborhood items
 let placed = [];
 let nActive = { a: true, b: true, c: true };
 let activeConds = new Set();
 let nextId = 1;
-let movingId = null, moveOX = 0, moveOY = 0, moveNid = null;
+let movingId = null, moveOX = 0, moveOY = 0, moveZone = null;
+let draggingKind = null; // for dragover filtering
 
-// ─── Format kW ────────────────────────────────────────────────────────────────
+// ─── Formatting ───────────────────────────────────────────────────────────────
 
 function fmt(kw) {
   const neg = kw < 0;
   const s = Math.round(Math.abs(kw)).toLocaleString() + ' kW';
   return neg ? '−' + s : s;
 }
-
 function fmtShort(kw) {
   const abs = Math.abs(kw);
-  if (abs >= 1000000) return (abs / 1000000).toFixed(1) + 'M';
-  if (abs >= 1000)    return (abs / 1000).toFixed(0) + 'k';
+  if (abs >= 1000) return (abs / 1000).toFixed(1) + 'k';
   return Math.round(abs).toString();
 }
 
@@ -536,21 +564,18 @@ function gaugeArc(f1, f2) {
   f2 = Math.max(0, Math.min(1, f2));
   if (Math.abs(f2 - f1) < 0.001) return '';
   const p1 = gaugePt(f1), p2 = gaugePt(f2);
-  // sweep=0: counter-clockwise in SVG = goes through top (correct for our gauge)
   return `M ${p1.x.toFixed(2)},${p1.y.toFixed(2)} A ${GR},${GR} 0 0,0 ${p2.x.toFixed(2)},${p2.y.toFixed(2)}`;
 }
 
 function updateGauge(totalS, totalD) {
   const hasData = totalS > 0 || totalD > 0;
-  const max = hasData ? Math.max(totalS, totalD) * 1.25 : 1000;
+  const max = hasData ? Math.max(totalS, totalD) * 1.25 : 100;
   const sf = totalS / max;
   const df = totalD / max;
   const deficit = totalS < totalD && totalD > 0;
 
-  // Background arc
   document.getElementById('g-bg').setAttribute('d', gaugeArc(0, 1));
 
-  // Supply fill arc
   const fill = document.getElementById('g-fill');
   if (totalS > 0) {
     fill.setAttribute('d', gaugeArc(0, sf));
@@ -560,7 +585,6 @@ function updateGauge(totalS, totalD) {
     fill.style.opacity = '0';
   }
 
-  // Demand zone (subtle highlight from 0 → demand)
   const dzone = document.getElementById('g-demand-zone');
   if (totalD > 0) {
     dzone.setAttribute('d', gaugeArc(0, df));
@@ -569,7 +593,6 @@ function updateGauge(totalS, totalD) {
     dzone.style.opacity = '0';
   }
 
-  // Demand tick
   const dtick = document.getElementById('g-dtick');
   const dlbl  = document.getElementById('g-dlbl');
   if (totalD > 0 && df <= 1) {
@@ -589,17 +612,13 @@ function updateGauge(totalS, totalD) {
     dlbl.textContent = '';
   }
 
-  // Needle
   const needle = document.getElementById('g-needle');
   const np = gaugePt(sf);
   needle.setAttribute('x2', np.x.toFixed(2));
   needle.setAttribute('y2', np.y.toFixed(2));
   needle.setAttribute('stroke', deficit ? '#ef4444' : '#e2e8f0');
 
-  // Max label
-  document.getElementById('g-max-lbl').textContent = hasData ? fmtShort(max) : '';
-
-  // Pulse glow
+  document.getElementById('g-max-lbl').textContent = hasData ? fmtShort(max) + ' kW' : '';
   document.getElementById('gauge').classList.toggle('deficit', deficit);
 }
 
@@ -614,6 +633,7 @@ function renderPalette() {
     el.innerHTML = `<span class="p-icon">${def.icon}</span>
       <div><div class="p-name">${def.label}</div><div class="p-spec">${def.spec}</div></div>`;
     el.addEventListener('dragstart', e => {
+      draggingKind = kind;
       e.dataTransfer.effectAllowed = 'copy';
       e.dataTransfer.setData('application/json', JSON.stringify({ type, kind }));
     });
@@ -626,28 +646,36 @@ function renderPalette() {
   for (const [t,d] of Object.entries(DEMAND))  dp.appendChild(make(t, d, 'demand'));
 }
 
-// ─── Layout & connection lines ────────────────────────────────────────────────
+// ─── Layout & lines ───────────────────────────────────────────────────────────
 
 function layoutWorkspace() {
   const ws = document.getElementById('workspace');
   const W = ws.offsetWidth, H = ws.offsetHeight;
 
-  const zones = {
-    a: { l: 0.01*W, t: 0.06*H, w: 0.28*W, h: 0.87*H },
-    b: { l: 0.63*W, t: 0.04*H, w: 0.35*W, h: 0.43*H },
-    c: { l: 0.63*W, t: 0.55*H, w: 0.35*W, h: 0.40*H },
-  };
-  for (const [nid, z] of Object.entries(zones)) {
-    const el = document.getElementById('n-' + nid);
-    el.style.left = z.l + 'px'; el.style.top  = z.t + 'px';
-    el.style.width = z.w + 'px'; el.style.height = z.h + 'px';
-  }
+  // Supply zone: left side
+  const sz = document.getElementById('supply-zone');
+  sz.style.left   = (W * 0.01) + 'px';
+  sz.style.top    = (H * 0.05) + 'px';
+  sz.style.width  = (W * 0.25) + 'px';
+  sz.style.height = (H * 0.88) + 'px';
 
+  // Three neighborhoods stacked on right
+  const gap = H * 0.02;
+  const nh  = (H * 0.9 - gap * 2) / 3;
+  const nl  = W * 0.58, nw = W * 0.40, nt = H * 0.05;
+  ['a','b','c'].forEach((nid, i) => {
+    const el = document.getElementById('n-' + nid);
+    el.style.left   = nl + 'px';
+    el.style.top    = (nt + i * (nh + gap)) + 'px';
+    el.style.width  = nw + 'px';
+    el.style.height = nh + 'px';
+  });
+
+  // Substation: center column
   const sub = document.getElementById('substation');
-  const sw = 158;
-  sub.style.width = sw + 'px';
-  sub.style.left = (W * 0.335) + 'px';
-  sub.style.top  = (H * 0.5 - sub.offsetHeight / 2) + 'px';
+  sub.style.width = '156px';
+  sub.style.left  = (W * 0.30) + 'px';
+  sub.style.top   = (H * 0.5 - (sub.offsetHeight || 160) / 2) + 'px';
 
   drawLines();
 }
@@ -657,36 +685,65 @@ function drawLines() {
   const svg = document.getElementById('lines');
   const wsR = ws.getBoundingClientRect();
 
-  function edge(el, side) {
+  function midEdge(el, side) {
     const r = el.getBoundingClientRect();
     const x = r.left - wsR.left, y = r.top - wsR.top;
-    if (side === 'left')  return { x: x,          y: y + r.height/2 };
-    if (side === 'right') return { x: x + r.width, y: y + r.height/2 };
+    if (side === 'left')  return { x: x,           y: y + r.height / 2 };
+    if (side === 'right') return { x: x + r.width,  y: y + r.height / 2 };
   }
 
   const sub = document.getElementById('substation');
+  const sz  = document.getElementById('supply-zone');
   const na  = document.getElementById('n-a');
   const nb  = document.getElementById('n-b');
   const nc  = document.getElementById('n-c');
 
-  const sL = edge(sub, 'left'), sR = edge(sub, 'right');
-  const aR = edge(na, 'right');
-  const bL = edge(nb, 'left');
-  const cL = edge(nc, 'left');
+  const sL = midEdge(sub, 'left'), sR = midEdge(sub, 'right');
+  const szR = midEdge(sz, 'right');
+  const aL  = midEdge(na, 'left');
+  const bL  = midEdge(nb, 'left');
+  const cL  = midEdge(nc, 'left');
 
-  function ln(p1, p2, nid) {
-    return `<line class="conn-line ${nActive[nid] ? 'active' : 'off'}"
+  function ln(p1, p2, cls) {
+    return `<line class="conn-line ${cls}"
       x1="${p1.x.toFixed(1)}" y1="${p1.y.toFixed(1)}"
       x2="${p2.x.toFixed(1)}" y2="${p2.y.toFixed(1)}"/>`;
   }
-  svg.innerHTML = ln(sL, aR, 'a') + ln(sR, bL, 'b') + ln(sR, cL, 'c');
+
+  svg.innerHTML =
+    ln(szR, sL, 'supply-line') +
+    ln(sR, aL, nActive.a ? 'active' : 'off') +
+    ln(sR, bL, nActive.b ? 'active' : 'off') +
+    ln(sR, cL, nActive.c ? 'active' : 'off');
 }
 
-// ─── Neighborhood drop ────────────────────────────────────────────────────────
+// ─── Supply zone drop ─────────────────────────────────────────────────────────
+
+const szEl = document.getElementById('supply-zone');
+szEl.addEventListener('dragover', e => {
+  if (draggingKind !== 'supply') return;
+  e.preventDefault(); e.dataTransfer.dropEffect = 'copy';
+  szEl.classList.add('dragover');
+});
+szEl.addEventListener('dragleave', e => {
+  if (!szEl.contains(e.relatedTarget)) szEl.classList.remove('dragover');
+});
+szEl.addEventListener('drop', e => {
+  e.preventDefault(); szEl.classList.remove('dragover');
+  let data;
+  try { data = JSON.parse(e.dataTransfer.getData('application/json')); } catch { return; }
+  if (data.kind !== 'supply') return;
+  const body = document.getElementById('sz-body');
+  const br = body.getBoundingClientRect();
+  addPlaced(data.type, 'supply', 'supply', e.clientX - br.left - 54, e.clientY - br.top - 24);
+});
+
+// ─── Neighborhood drops (demand only) ────────────────────────────────────────
 
 ['a','b','c'].forEach(nid => {
   const el = document.getElementById('n-' + nid);
   el.addEventListener('dragover', e => {
+    if (draggingKind !== 'demand') return;
     e.preventDefault(); e.dataTransfer.dropEffect = 'copy';
     el.classList.add('nhood-dragover');
   });
@@ -697,21 +754,26 @@ function drawLines() {
     e.preventDefault(); el.classList.remove('nhood-dragover');
     let data;
     try { data = JSON.parse(e.dataTransfer.getData('application/json')); } catch { return; }
+    if (data.kind !== 'demand') return;
     const body = document.getElementById('nb-' + nid);
     const br = body.getBoundingClientRect();
-    addPlaced(data.type, data.kind, nid, e.clientX - br.left - 54, e.clientY - br.top - 24);
+    addPlaced(data.type, 'demand', nid, e.clientX - br.left - 54, e.clientY - br.top - 24);
   });
 });
 
 // ─── Placed items ─────────────────────────────────────────────────────────────
 
-function addPlaced(type, kind, nid, x, y) {
+function getContainer(zone) {
+  return document.getElementById(zone === 'supply' ? 'sz-body' : 'nb-' + zone);
+}
+
+function addPlaced(type, kind, zone, x, y) {
   const id = nextId++;
-  placed.push({ id, type, kind, nid, x, y });
+  placed.push({ id, type, kind, zone, x, y });
   const def = kind === 'supply' ? SUPPLY[type] : DEMAND[type];
   const { kw, offline } = effectiveKW(type, kind);
 
-  const body = document.getElementById('nb-' + nid);
+  const body = getContainer(zone);
   const el = document.createElement('div');
   el.id = 'pi-' + id;
   el.className = 'placed ' + kind + (offline ? ' offline' : '');
@@ -720,7 +782,7 @@ function addPlaced(type, kind, nid, x, y) {
   el.innerHTML = `
     <div class="pl-head">
       <div class="pl-title">${def.icon} ${def.label}</div>
-      <button class="pl-del" data-id="${id}">×</button>
+      <button class="pl-del">×</button>
     </div>
     <div class="pl-kw">${fmt(kw)}</div>
     <div class="pl-off-tag">OFFLINE</div>
@@ -731,8 +793,10 @@ function addPlaced(type, kind, nid, x, y) {
   el.addEventListener('mousedown', onItemMouseDown);
   body.appendChild(el);
 
-  const hint = body.querySelector('.nhood-hint');
+  // Hide zone hint when items present
+  const hint = body.querySelector('#sz-hint, .nhood-hint');
   if (hint) hint.style.opacity = '0';
+
   updateBalance();
 }
 
@@ -741,9 +805,10 @@ function removePlaced(id) {
   if (!item) return;
   placed = placed.filter(i => i.id !== id);
   document.getElementById('pi-' + id)?.remove();
-  const body = document.getElementById('nb-' + item.nid);
-  if (body && placed.filter(p => p.nid === item.nid).length === 0) {
-    const hint = body.querySelector('.nhood-hint');
+
+  const body = getContainer(item.zone);
+  if (body && placed.filter(p => p.zone === item.zone).length === 0) {
+    const hint = body.querySelector('#sz-hint, .nhood-hint');
     if (hint) hint.style.opacity = '1';
   }
   updateBalance();
@@ -759,7 +824,7 @@ function onItemMouseDown(e) {
   const item = placed.find(i => i.id === id);
   if (!item) return;
   const rect = el.getBoundingClientRect();
-  movingId = id; moveNid = item.nid;
+  movingId = id; moveZone = item.zone;
   moveOX = e.clientX - rect.left; moveOY = e.clientY - rect.top;
   el.style.zIndex = 20;
   el.style.boxShadow = '0 8px 28px rgba(0,0,0,.8)';
@@ -769,7 +834,7 @@ document.addEventListener('mousemove', e => {
   if (movingId === null) return;
   const el = document.getElementById('pi-' + movingId);
   if (!el) return;
-  const body = document.getElementById('nb-' + moveNid);
+  const body = getContainer(moveZone);
   const br = body.getBoundingClientRect();
   const x = Math.max(0, Math.min(e.clientX - br.left - moveOX, br.width  - el.offsetWidth));
   const y = Math.max(0, Math.min(e.clientY - br.top  - moveOY, br.height - el.offsetHeight));
@@ -782,7 +847,7 @@ document.addEventListener('mouseup', () => {
   if (movingId === null) return;
   const el = document.getElementById('pi-' + movingId);
   if (el) { el.style.zIndex = ''; el.style.boxShadow = ''; }
-  movingId = null; moveNid = null;
+  movingId = null; moveZone = null;
 });
 
 // ─── Substation toggles ───────────────────────────────────────────────────────
@@ -828,32 +893,39 @@ function renderConditions() {
   }
 }
 
-// ─── Balance update ───────────────────────────────────────────────────────────
+// ─── Balance ─────────────────────────────────────────────────────────────────
 
 function updateBalance() {
-  const nTotals = { a: {s:0,d:0}, b: {s:0,d:0}, c: {s:0,d:0} };
+  let totalS = 0;
+  const nDemand = { a: 0, b: 0, c: 0 };
 
   for (const item of placed) {
     const { kw, offline } = effectiveKW(item.type, item.kind);
-    if (item.kind === 'supply') nTotals[item.nid].s += kw;
-    else                        nTotals[item.nid].d += kw;
     const el = document.getElementById('pi-' + item.id);
     if (el) {
       el.querySelector('.pl-kw').textContent = fmt(kw);
       el.classList.toggle('offline', offline);
     }
+    if (item.kind === 'supply') {
+      totalS += kw;
+    } else {
+      nDemand[item.zone] = (nDemand[item.zone] || 0) + kw;
+    }
   }
 
+  // Supply zone total
+  document.getElementById('sz-total').textContent = fmt(totalS);
+
+  // Neighborhood demand tallies
   for (const nid of ['a','b','c']) {
-    const t = nTotals[nid];
-    const p = { a:'na', b:'nb', c:'nc' }[nid];
-    document.getElementById(p + '-s').textContent = fmt(t.s);
-    document.getElementById(p + '-d').textContent = fmt(t.d);
+    const pfx = { a:'na', b:'nb', c:'nc' }[nid];
+    document.getElementById(pfx + '-d').textContent = fmt(nDemand[nid]);
   }
 
-  let totalS = 0, totalD = 0;
+  // Total demand = only active neighborhoods
+  let totalD = 0;
   for (const nid of ['a','b','c']) {
-    if (nActive[nid]) { totalS += nTotals[nid].s; totalD += nTotals[nid].d; }
+    if (nActive[nid]) totalD += nDemand[nid];
   }
 
   document.getElementById('tot-s').textContent = fmt(totalS);
@@ -865,7 +937,7 @@ function updateBalance() {
   const diff = totalS - totalD;
   if (totalS === 0 && totalD === 0) {
     badge.textContent = '—'; badge.className = 'balanced';
-  } else if (Math.abs(diff) < 1) {
+  } else if (Math.abs(diff) < 0.5) {
     badge.textContent = 'Balanced'; badge.className = 'balanced';
   } else if (diff > 0) {
     badge.textContent = '+' + fmt(diff) + ' surplus'; badge.className = 'surplus';
