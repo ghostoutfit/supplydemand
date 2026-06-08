@@ -5,298 +5,309 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Supply & Demand Grid</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-  :root {
-    --bg:         #0f1117;
-    --surface:    #1a1d27;
-    --surface2:   #22263a;
-    --border:     #2e3248;
-    --supply:     #22c55e;
-    --demand:     #f97316;
-    --accent:     #6366f1;
-    --danger:     #ef4444;
-    --text:       #e2e8f0;
-    --text-dim:   #64748b;
-  }
+:root {
+  --bg:       #0f1117;
+  --surface:  #1a1d27;
+  --surface2: #22263a;
+  --border:   #2e3248;
+  --supply:   #22c55e;
+  --demand:   #f97316;
+  --accent:   #6366f1;
+  --danger:   #ef4444;
+  --text:     #e2e8f0;
+  --dim:      #64748b;
+}
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Segoe UI', system-ui, sans-serif;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
 
-  /* ── Header ─────────────────────────────────────────────────────── */
-  #header {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 10px 20px;
-    display: flex;
-    align-items: center;
-    gap: 24px;
-    flex-shrink: 0;
-    height: 52px;
-  }
+/* ── Header ───────────────────────────────────────────────────── */
+#header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-shrink: 0;
+  height: 72px;
+}
+#header h1 { font-size: 14px; font-weight: 700; white-space: nowrap; }
 
-  #header h1 {
-    font-size: 15px;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-    white-space: nowrap;
-  }
+#balance {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
 
-  #balance {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
+.bstat { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+.bstat .lbl { font-size: 9px; color: var(--dim); letter-spacing: .06em; text-transform: uppercase; }
+.bstat .val { font-weight: 800; font-size: 16px; font-variant-numeric: tabular-nums; }
+.sv { color: var(--supply); }
+.dv { color: var(--demand); }
 
-  .bal-stat { display: flex; align-items: center; gap: 6px; font-size: 12px; }
-  .bal-stat .lbl { color: var(--text-dim); }
-  .bal-stat .val { font-weight: 700; font-size: 14px; }
-  .s-val { color: var(--supply); }
-  .d-val { color: var(--demand); }
+/* Gauge */
+#gauge-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+#gauge { overflow: visible; display: block; }
 
-  #bar-wrap {
-    flex: 1;
-    height: 6px;
-    background: var(--surface2);
-    border-radius: 3px;
-    overflow: hidden;
-    position: relative;
-    min-width: 80px;
-  }
-  #bar-s { height: 100%; background: var(--supply); border-radius: 3px; transition: width .3s; }
-  #bar-d {
-    position: absolute; top: 0; height: 100%;
-    background: var(--demand); border-radius: 3px;
-    opacity: .55; transition: width .3s;
-  }
+@keyframes pulse-red {
+  0%, 100% { filter: drop-shadow(0 0 3px rgba(239,68,68,.5)); }
+  50%       { filter: drop-shadow(0 0 10px rgba(239,68,68,.9)); }
+}
+#gauge.deficit { animation: pulse-red 1s ease-in-out infinite; }
 
-  #badge {
-    padding: 3px 10px;
-    border-radius: 10px;
-    font-size: 11px;
-    font-weight: 700;
-    white-space: nowrap;
-  }
-  #badge.surplus  { background: rgba(34,197,94,.13);  color: var(--supply); }
-  #badge.deficit  { background: rgba(249,115,22,.13); color: var(--demand); }
-  #badge.balanced { background: rgba(99,102,241,.13); color: var(--accent); }
+#badge {
+  padding: 2px 9px; border-radius: 10px;
+  font-size: 10px; font-weight: 700; white-space: nowrap;
+  margin-top: -4px;
+}
+#badge.surplus  { background: rgba(34,197,94,.13);  color: var(--supply); }
+#badge.deficit  { background: rgba(239,68,68,.13);  color: var(--danger); }
+#badge.balanced { background: rgba(99,102,241,.13); color: var(--accent); }
 
-  /* ── Main layout ─────────────────────────────────────────────────── */
-  #main { display: flex; flex: 1; overflow: hidden; }
+/* ── Main ──────────────────────────────────────────────────────── */
+#main { display: flex; flex: 1; overflow: hidden; }
 
-  /* ── Palette ─────────────────────────────────────────────────────── */
-  #palette {
-    width: 176px;
-    background: var(--surface);
-    border-right: 1px solid var(--border);
-    overflow-y: auto;
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-  }
+/* ── Palette ───────────────────────────────────────────────────── */
+#palette {
+  width: 170px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.pal-section { padding: 10px; }
+.pal-section + .pal-section { border-top: 1px solid var(--border); }
+.pal-head {
+  font-size: 9px; font-weight: 800;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--dim); margin-bottom: 7px;
+}
+.pal-item {
+  display: flex; align-items: center; gap: 7px;
+  padding: 7px 9px; border-radius: 6px;
+  border: 1px solid var(--border);
+  margin-bottom: 5px; cursor: grab;
+  user-select: none; font-size: 11px;
+  background: var(--surface2);
+  transition: border-color .15s, transform .1s;
+}
+.pal-item:hover { border-color: var(--accent); transform: translateX(2px); }
+.pal-item:active { cursor: grabbing; }
+.pal-item.supply { border-left: 3px solid var(--supply); }
+.pal-item.demand { border-left: 3px solid var(--demand); }
+.p-icon { font-size: 14px; flex-shrink: 0; }
+.p-name { font-weight: 600; font-size: 11px; }
+.p-spec { font-size: 9px; color: var(--dim); margin-top: 1px; }
 
-  .pal-section { padding: 10px; }
-  .pal-section + .pal-section { border-top: 1px solid var(--border); }
+/* ── Workspace ──────────────────────────────────────────────────── */
+#workspace {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background-image:
+    linear-gradient(rgba(46,50,72,.3) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(46,50,72,.3) 1px, transparent 1px);
+  background-size: 36px 36px;
+  background-color: var(--bg);
+}
 
-  .pal-heading {
-    font-size: 9px;
-    font-weight: 800;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-    color: var(--text-dim);
-    margin-bottom: 8px;
-  }
+#lines {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+.conn-line { stroke: #3b4166; stroke-width: 2; fill: none; stroke-dasharray: 6 4; }
+.conn-line.active { stroke: var(--accent); opacity: .55; }
+.conn-line.off    { stroke: #252840; opacity: .35; }
 
-  .pal-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 7px 9px;
-    border-radius: 6px;
-    border: 1px solid var(--border);
-    margin-bottom: 5px;
-    cursor: grab;
-    user-select: none;
-    font-size: 11px;
-    background: var(--surface2);
-    transition: border-color .15s, transform .1s, background .15s;
-  }
-  .pal-item:hover { border-color: var(--accent); transform: translateX(2px); background: var(--surface); }
-  .pal-item:active { cursor: grabbing; }
-  .pal-item.supply { border-left: 3px solid var(--supply); }
-  .pal-item.demand { border-left: 3px solid var(--demand); }
+/* ── Neighborhoods ─────────────────────────────────────────────── */
+.nhood {
+  position: absolute;
+  border: 1.5px dashed var(--border);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  transition: border-color .2s, opacity .3s;
+  overflow: hidden;
+}
+.nhood.active { border-color: rgba(99,102,241,.4); }
+.nhood.off    { opacity: .4; border-color: #252840; }
 
-  .p-icon { font-size: 15px; line-height: 1; flex-shrink: 0; }
-  .p-info { flex: 1; min-width: 0; }
-  .p-name { font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .p-spec { font-size: 9px; color: var(--text-dim); margin-top: 1px; }
+.nhood-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 5px 10px;
+  background: rgba(26,29,39,.9);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.nhood-name {
+  font-size: 10px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--dim);
+}
+.nhood-tally { font-size: 9px; display: flex; gap: 8px; }
+.nhood-tally .ns { color: var(--supply); font-weight: 600; }
+.nhood-tally .nd { color: var(--demand); font-weight: 600; }
 
-  /* ── Workspace ───────────────────────────────────────────────────── */
-  #workspace {
-    flex: 1;
-    position: relative;
-    overflow: hidden;
-    background-image:
-      linear-gradient(rgba(46,50,72,.35) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(46,50,72,.35) 1px, transparent 1px);
-    background-size: 40px 40px;
-    background-color: var(--bg);
-  }
+.nhood-body { flex: 1; position: relative; min-height: 0; }
 
-  #drop-hint {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    color: var(--text-dim);
-    font-size: 13px;
-    pointer-events: none;
-    transition: opacity .3s;
-  }
-  #drop-hint svg { opacity: .3; }
+.nhood-hint {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; color: rgba(100,116,139,.35);
+  pointer-events: none; transition: opacity .3s;
+}
 
-  /* ── Placed items ────────────────────────────────────────────────── */
-  .placed {
-    position: absolute;
-    width: 118px;
-    padding: 9px 11px 10px;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    cursor: move;
-    user-select: none;
-    box-shadow: 0 2px 10px rgba(0,0,0,.45);
-    transition: box-shadow .15s;
-  }
-  .placed:hover { box-shadow: 0 4px 20px rgba(0,0,0,.65); }
-  .placed.supply { border-top: 3px solid var(--supply); }
-  .placed.demand { border-top: 3px solid var(--demand); }
+.nhood-dragover { border-color: var(--accent) !important; }
+.nhood-dragover .nhood-body { background: rgba(99,102,241,.04); }
 
-  .pl-head {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    margin-bottom: 5px;
-  }
-  .pl-title {
-    font-size: 10px;
-    font-weight: 700;
-    color: var(--text);
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    line-height: 1.3;
-  }
-  .pl-del {
-    border: none;
-    background: transparent;
-    color: var(--text-dim);
-    cursor: pointer;
-    font-size: 14px;
-    line-height: 1;
-    padding: 0 0 0 4px;
-    flex-shrink: 0;
-    border-radius: 3px;
-  }
-  .pl-del:hover { color: var(--danger); }
+.nhood-overlay {
+  display: none;
+  position: absolute; inset: 0;
+  background: rgba(15,17,23,.65);
+  align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: .1em; color: var(--danger);
+  z-index: 10; pointer-events: none;
+  backdrop-filter: blur(1px);
+}
+.nhood.off .nhood-overlay { display: flex; }
 
-  .pl-mw {
-    font-size: 14px;
-    font-weight: 800;
-    transition: color .2s;
-  }
-  .placed.supply .pl-mw { color: var(--supply); }
-  .placed.demand .pl-mw { color: var(--demand); }
+/* ── Substation ─────────────────────────────────────────────────── */
+#substation {
+  position: absolute;
+  background: var(--surface);
+  border: 1.5px solid var(--accent);
+  border-radius: 10px;
+  box-shadow: 0 0 24px rgba(99,102,241,.2), 0 4px 20px rgba(0,0,0,.6);
+  overflow: hidden;
+  z-index: 5;
+}
+.sub-title {
+  padding: 7px 12px;
+  background: rgba(99,102,241,.12);
+  border-bottom: 1px solid rgba(99,102,241,.25);
+  font-size: 10px; font-weight: 800;
+  letter-spacing: .06em; text-transform: uppercase;
+  color: var(--accent); text-align: center;
+}
+.sub-body { padding: 7px; }
+.sub-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 4px 6px; border-radius: 5px; margin-bottom: 4px;
+  background: var(--surface2);
+}
+.sub-row-label {
+  font-size: 10px; font-weight: 600; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  flex: 1; min-width: 0; margin-right: 6px;
+}
+.sub-toggle {
+  flex-shrink: 0; width: 34px; height: 18px;
+  border-radius: 9px; border: none; cursor: pointer;
+  transition: background .2s; position: relative;
+}
+.sub-toggle.on  { background: var(--supply); }
+.sub-toggle.off { background: #374151; }
+.sub-toggle::before {
+  content: ''; width: 12px; height: 12px;
+  border-radius: 50%; background: #fff;
+  position: absolute; top: 3px;
+  transition: left .2s;
+}
+.sub-toggle.on::before  { left: 19px; }
+.sub-toggle.off::before { left: 3px; }
+.sub-divider { height: 1px; background: var(--border); margin: 5px 0; }
+.sub-stats { padding: 0 6px 3px; display: flex; flex-direction: column; gap: 3px; }
+.sub-stat { display: flex; justify-content: space-between; font-size: 9px; }
+.sub-stat .lbl { color: var(--dim); }
+.sub-stat .val { font-weight: 700; }
+.sub-stat .val.s { color: var(--supply); }
+.sub-stat .val.d { color: var(--demand); }
 
-  .pl-offline-tag {
-    display: none;
-    font-size: 9px;
-    font-weight: 700;
-    color: var(--danger);
-    letter-spacing: .06em;
-    margin-top: 3px;
-  }
-  .placed.offline .pl-mw { opacity: .35; text-decoration: line-through; }
-  .placed.offline .pl-offline-tag { display: block; }
+/* ── Placed items ───────────────────────────────────────────────── */
+.placed {
+  position: absolute; width: 108px;
+  padding: 7px 9px 8px; border-radius: 7px;
+  border: 1px solid var(--border); background: var(--surface);
+  cursor: move; user-select: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,.5);
+  transition: box-shadow .15s; z-index: 2;
+}
+.placed:hover { box-shadow: 0 4px 16px rgba(0,0,0,.7); }
+.placed.supply { border-top: 2px solid var(--supply); }
+.placed.demand { border-top: 2px solid var(--demand); }
+.pl-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 4px; }
+.pl-title { font-size: 9px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 3px; }
+.pl-del {
+  border: none; background: transparent; color: var(--dim);
+  cursor: pointer; font-size: 13px; line-height: 1; padding: 0 0 0 3px; flex-shrink: 0;
+}
+.pl-del:hover { color: var(--danger); }
+.pl-kw { font-size: 13px; font-weight: 800; }
+.placed.supply .pl-kw { color: var(--supply); }
+.placed.demand .pl-kw { color: var(--demand); }
+.placed.offline .pl-kw { opacity: .3; text-decoration: line-through; }
+.pl-off-tag {
+  display: none; font-size: 8px; font-weight: 700;
+  color: var(--danger); letter-spacing: .06em; margin-top: 2px;
+}
+.placed.offline .pl-off-tag { display: block; }
 
-  /* ── Conditions panel ────────────────────────────────────────────── */
-  #conditions {
-    width: 216px;
-    background: var(--surface);
-    border-left: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 0;
-  }
-
-  #cond-header {
-    padding: 10px 14px;
-    border-bottom: 1px solid var(--border);
-    font-size: 9px;
-    font-weight: 800;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-    color: var(--text-dim);
-  }
-
-  #cond-body { padding: 10px; overflow-y: auto; flex: 1; }
-
-  .cond-card {
-    padding: 11px 12px;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    margin-bottom: 8px;
-    background: var(--surface2);
-    cursor: pointer;
-    transition: border-color .15s, background .15s;
-  }
-  .cond-card:hover { border-color: var(--accent); }
-  .cond-card.on { border-color: var(--accent); background: rgba(99,102,241,.09); }
-
-  .cond-top {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 6px;
-  }
-
-  .cond-check {
-    width: 15px; height: 15px;
-    border-radius: 4px;
-    border: 2px solid var(--text-dim);
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-    transition: background .15s, border-color .15s;
-  }
-  .cond-card.on .cond-check { background: var(--accent); border-color: var(--accent); }
-  .cond-check svg { opacity: 0; transition: opacity .15s; }
-  .cond-card.on .cond-check svg { opacity: 1; }
-
-  .cond-name { font-size: 12px; font-weight: 700; color: var(--text); }
-
-  .cond-desc { font-size: 10px; color: var(--text-dim); line-height: 1.45; margin-bottom: 7px; }
-
-  .cond-tags { display: flex; flex-wrap: wrap; gap: 4px; }
-  .tag {
-    display: inline-flex; align-items: center; gap: 3px;
-    font-size: 9px; font-weight: 700;
-    padding: 2px 6px; border-radius: 4px;
-  }
-  .tag.s-down { background: rgba(239,68,68,.14); color: #f87171; }
-  .tag.d-up   { background: rgba(249,115,22,.14); color: var(--demand); }
-  .tag.s-off  { background: rgba(100,116,139,.14); color: #94a3b8; }
-  .tag.d-down { background: rgba(34,197,94,.14);  color: var(--supply); }
+/* ── Conditions ─────────────────────────────────────────────────── */
+#conditions {
+  width: 210px; background: var(--surface);
+  border-left: 1px solid var(--border);
+  display: flex; flex-direction: column; flex-shrink: 0;
+}
+#cond-hd {
+  padding: 9px 13px; border-bottom: 1px solid var(--border);
+  font-size: 9px; font-weight: 800; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--dim);
+}
+#cond-body { padding: 9px; overflow-y: auto; flex: 1; }
+.cond-card {
+  padding: 10px 11px; border-radius: 7px;
+  border: 1px solid var(--border); margin-bottom: 7px;
+  background: var(--surface2); cursor: pointer; transition: border-color .15s;
+}
+.cond-card:hover { border-color: var(--accent); }
+.cond-card.on { border-color: var(--accent); background: rgba(99,102,241,.08); }
+.cond-top { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; }
+.cond-chk {
+  width: 14px; height: 14px; border-radius: 3px;
+  border: 2px solid var(--dim);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  transition: background .15s, border-color .15s;
+}
+.cond-card.on .cond-chk { background: var(--accent); border-color: var(--accent); }
+.cond-chk svg { opacity: 0; transition: opacity .15s; }
+.cond-card.on .cond-chk svg { opacity: 1; }
+.cond-name { font-size: 11px; font-weight: 700; }
+.cond-desc { font-size: 10px; color: var(--dim); line-height: 1.4; margin-bottom: 6px; }
+.cond-tags { display: flex; flex-wrap: wrap; gap: 3px; }
+.tag { font-size: 9px; font-weight: 700; padding: 2px 5px; border-radius: 3px; }
+.tag.s-down { background: rgba(239,68,68,.14); color: #f87171; }
+.tag.d-up   { background: rgba(249,115,22,.14); color: var(--demand); }
+.tag.s-off  { background: rgba(100,116,139,.14); color: #94a3b8; }
+.tag.d-down { background: rgba(34,197,94,.14);  color: var(--supply); }
 </style>
 </head>
 <body>
@@ -304,19 +315,40 @@
 <div id="header">
   <h1>⚡ Energy Grid</h1>
   <div id="balance">
-    <div class="bal-stat">
+    <div class="bstat">
       <span class="lbl">Supply</span>
-      <span class="val s-val" id="tot-s">0 MW</span>
+      <span class="val sv" id="tot-s">0 kW</span>
     </div>
-    <div class="bal-stat">
+
+    <div id="gauge-wrap">
+      <!-- SVG gauge: 180° semicircle, CX=90 CY=80 R=68 -->
+      <svg id="gauge" viewBox="0 0 180 92" width="180" height="92">
+        <!-- Background arc (full 0→1) -->
+        <path id="g-bg" fill="none" stroke="#1e2235" stroke-width="12" stroke-linecap="round"/>
+        <!-- Demand target zone (subtle arc 0→demand) -->
+        <path id="g-demand-zone" fill="none" stroke-width="12" stroke-linecap="round" stroke="#2a1f10" opacity=".8"/>
+        <!-- Supply fill arc (0→supply) -->
+        <path id="g-fill" fill="none" stroke-width="12" stroke-linecap="round"/>
+        <!-- Demand tick mark (inner+outer) -->
+        <line id="g-dtick" stroke-width="2.5" stroke-linecap="round"/>
+        <!-- Demand label -->
+        <text id="g-dlbl" font-size="7.5" font-weight="700" fill="#94a3b8" text-anchor="middle" letter-spacing=".04em"/>
+        <!-- Needle -->
+        <line id="g-needle" stroke-width="2" stroke-linecap="round" x1="90" y1="80"/>
+        <!-- Needle hub -->
+        <circle cx="90" cy="80" r="4" fill="#e2e8f0"/>
+        <!-- 0 label -->
+        <text x="14" y="88" font-size="8" fill="#475569" text-anchor="middle">0</text>
+        <!-- Max label (updated dynamically) -->
+        <text id="g-max-lbl" x="166" y="88" font-size="8" fill="#475569" text-anchor="middle"/>
+      </svg>
+      <div id="badge" class="balanced">—</div>
+    </div>
+
+    <div class="bstat">
       <span class="lbl">Demand</span>
-      <span class="val d-val" id="tot-d">0 MW</span>
+      <span class="val dv" id="tot-d">0 kW</span>
     </div>
-    <div id="bar-wrap">
-      <div id="bar-s"></div>
-      <div id="bar-d"></div>
-    </div>
-    <div id="badge" class="balanced">—</div>
   </div>
 </div>
 
@@ -324,305 +356,424 @@
 
   <div id="palette">
     <div class="pal-section">
-      <div class="pal-heading">Supply</div>
+      <div class="pal-head">Supply</div>
       <div id="sup-pal"></div>
     </div>
     <div class="pal-section">
-      <div class="pal-heading">Demand</div>
+      <div class="pal-head">Demand</div>
       <div id="dem-pal"></div>
     </div>
   </div>
 
   <div id="workspace">
-    <div id="drop-hint">
-      <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-        <rect x="4" y="4" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/>
-        <rect x="22" y="4" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/>
-        <rect x="4" y="22" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/>
-        <rect x="22" y="22" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/>
-      </svg>
-      Drag items from the left panel
+    <svg id="lines"></svg>
+
+    <div class="nhood" id="n-a" data-nid="a">
+      <div class="nhood-header">
+        <span class="nhood-name">Neighborhood A</span>
+        <div class="nhood-tally"><span class="ns" id="na-s">0 kW</span><span class="nd" id="na-d">0 kW</span></div>
+      </div>
+      <div class="nhood-body" id="nb-a"><div class="nhood-hint">Drop items here</div></div>
+      <div class="nhood-overlay">DISCONNECTED</div>
+    </div>
+
+    <div class="nhood" id="n-b" data-nid="b">
+      <div class="nhood-header">
+        <span class="nhood-name">Neighborhood B</span>
+        <div class="nhood-tally"><span class="ns" id="nb-s">0 kW</span><span class="nd" id="nb-d">0 kW</span></div>
+      </div>
+      <div class="nhood-body" id="nb-b"><div class="nhood-hint">Drop items here</div></div>
+      <div class="nhood-overlay">DISCONNECTED</div>
+    </div>
+
+    <div class="nhood" id="n-c" data-nid="c">
+      <div class="nhood-header">
+        <span class="nhood-name">Neighborhood C</span>
+        <div class="nhood-tally"><span class="ns" id="nc-s">0 kW</span><span class="nd" id="nc-d">0 kW</span></div>
+      </div>
+      <div class="nhood-body" id="nb-c"><div class="nhood-hint">Drop items here</div></div>
+      <div class="nhood-overlay">DISCONNECTED</div>
+    </div>
+
+    <div id="substation">
+      <div class="sub-title">⚡ Main Substation</div>
+      <div class="sub-body">
+        <div class="sub-row">
+          <span class="sub-row-label">Neighborhood A</span>
+          <button class="sub-toggle on" data-n="a"></button>
+        </div>
+        <div class="sub-row">
+          <span class="sub-row-label">Neighborhood B</span>
+          <button class="sub-toggle on" data-n="b"></button>
+        </div>
+        <div class="sub-row">
+          <span class="sub-row-label">Neighborhood C</span>
+          <button class="sub-toggle on" data-n="c"></button>
+        </div>
+        <div class="sub-divider"></div>
+        <div class="sub-stats">
+          <div class="sub-stat"><span class="lbl">Total Supply</span><span class="val s" id="sub-s">0 kW</span></div>
+          <div class="sub-stat"><span class="lbl">Total Demand</span><span class="val d" id="sub-d">0 kW</span></div>
+        </div>
+      </div>
     </div>
   </div>
 
   <div id="conditions">
-    <div id="cond-header">Conditions</div>
+    <div id="cond-hd">Conditions</div>
     <div id="cond-body"></div>
   </div>
 
 </div>
 
 <script>
-// ─── Definitions ──────────────────────────────────────────────────────────────
+// ─── Definitions (all kW) ─────────────────────────────────────────────────────
 
 const SUPPLY = {
-  coal:    { label: 'Coal Plant',    icon: '🏭', baseMW: 500,   spec: '500 MW',   tags: [] },
-  nuclear: { label: 'Nuclear Plant', icon: '⚛️',  baseMW: 1000,  spec: '1,000 MW', tags: [] },
-  gas:     { label: 'Gas Plant',     icon: '🔥', baseMW: 400,   spec: '400 MW',   tags: [] },
-  wind:    { label: 'Wind Farm',     icon: '🌬️', baseMW: 150,   spec: '150 MW',   tags: ['wind','renewable'] },
-  solar:   { label: 'Solar Farm',    icon: '☀️', baseMW: 200,   spec: '200 MW',   tags: ['solar','renewable'] },
-  hydro:   { label: 'Hydro Dam',     icon: '💧', baseMW: 300,   spec: '300 MW',   tags: ['hydro'] },
+  coal:    { label: 'Coal Plant',    icon: '🏭', baseKW: 500000,   spec: '500,000 kW',   tags: [] },
+  nuclear: { label: 'Nuclear Plant', icon: '⚛️',  baseKW: 1000000,  spec: '1,000,000 kW', tags: [] },
+  gas:     { label: 'Gas Plant',     icon: '🔥', baseKW: 400000,   spec: '400,000 kW',   tags: [] },
+  wind:    { label: 'Wind Farm',     icon: '🌬️', baseKW: 150000,   spec: '150,000 kW',   tags: ['wind','renewable'] },
+  solar:   { label: 'Solar Farm',    icon: '☀️', baseKW: 200000,   spec: '200,000 kW',   tags: ['solar','renewable'] },
+  hydro:   { label: 'Hydro Dam',     icon: '💧', baseKW: 300000,   spec: '300,000 kW',   tags: ['hydro'] },
 };
 
 const DEMAND = {
-  house:      { label: 'House',          icon: '🏠', baseMW: 0.003, spec: '3 kW'    },
-  hospital:   { label: 'Hospital',       icon: '🏥', baseMW: 2,     spec: '2 MW'    },
-  restaurant: { label: 'Restaurant',     icon: '🍽️', baseMW: 0.05,  spec: '50 kW'   },
-  store:      { label: 'Store',          icon: '🏪', baseMW: 0.1,   spec: '100 kW'  },
-  police:     { label: 'Police Station', icon: '🚔', baseMW: 0.5,   spec: '500 kW'  },
-  school:     { label: 'School',         icon: '🏫', baseMW: 0.3,   spec: '300 kW'  },
-  factory:    { label: 'Factory',        icon: '🏗️', baseMW: 5,     spec: '5 MW'    },
+  house:      { label: 'House',          icon: '🏠', baseKW: 3,    spec: '3 kW'      },
+  hospital:   { label: 'Hospital',       icon: '🏥', baseKW: 2000, spec: '2,000 kW'  },
+  restaurant: { label: 'Restaurant',     icon: '🍽️', baseKW: 50,   spec: '50 kW'     },
+  store:      { label: 'Store',          icon: '🏪', baseKW: 100,  spec: '100 kW'    },
+  police:     { label: 'Police Station', icon: '🚔', baseKW: 500,  spec: '500 kW'    },
+  school:     { label: 'School',         icon: '🏫', baseKW: 300,  spec: '300 kW'    },
+  factory:    { label: 'Factory',        icon: '🏗️', baseKW: 5000, spec: '5,000 kW'  },
 };
 
-// Conditions: supplyMult and demandMult compound multiplicatively when stacked.
-// offlineTags: supply items whose tags intersect are taken offline entirely.
 const CONDITIONS = [
   {
-    id: 'winterCrisis',
-    name: 'Winter Crisis',
-    icon: '❄️',
+    id: 'winterCrisis', name: 'Winter Crisis', icon: '❄️',
     desc: 'Extreme cold drives heating demand up and strains ageing infrastructure.',
-    supplyMult: 0.60,
-    demandMult: 1.20,
-    tags: [
-      { cls: 'd-up',   label: 'Demand +20%' },
-      { cls: 's-down', label: 'Supply −40%' },
-    ],
+    supplyMult: 0.60, demandMult: 1.20,
+    tags: [{ cls: 'd-up', label: 'Demand +20%' }, { cls: 's-down', label: 'Supply −40%' }],
   },
   {
-    id: 'windlessNight',
-    name: 'Windless Night',
-    icon: '🌑',
-    desc: 'No wind and no sunlight — wind turbines and solar panels go dark.',
+    id: 'windlessNight', name: 'Windless Night', icon: '🌑',
+    desc: 'No wind, no sunlight — wind and solar farms produce nothing.',
     offlineTags: ['wind','solar'],
-    tags: [
-      { cls: 's-off', label: 'Wind offline' },
-      { cls: 's-off', label: 'Solar offline' },
-    ],
+    tags: [{ cls: 's-off', label: 'Wind offline' }, { cls: 's-off', label: 'Solar offline' }],
   },
   {
-    id: 'heatwave',
-    name: 'Heatwave',
-    icon: '🌡️',
+    id: 'heatwave', name: 'Heatwave', icon: '🌡️',
     desc: 'Record temperatures push air conditioning to its limits.',
     demandMult: 1.35,
-    tags: [
-      { cls: 'd-up', label: 'Demand +35%' },
-    ],
+    tags: [{ cls: 'd-up', label: 'Demand +35%' }],
   },
   {
-    id: 'peakHours',
-    name: 'Peak Hours',
-    icon: '⏰',
-    desc: 'Rush-hour load spike — everyone home, cooking, charging.',
+    id: 'peakHours', name: 'Peak Hours', icon: '⏰',
+    desc: 'Evening rush — everyone home, cooking, charging devices.',
     demandMult: 1.15,
-    tags: [
-      { cls: 'd-up', label: 'Demand +15%' },
-    ],
+    tags: [{ cls: 'd-up', label: 'Demand +15%' }],
   },
   {
-    id: 'offpeak',
-    name: 'Off-Peak Night',
-    icon: '🌙',
-    desc: 'Late night lull — most buildings idle, demand drops.',
+    id: 'offpeak', name: 'Off-Peak Night', icon: '🌙',
+    desc: 'Late night lull — most buildings idle.',
     demandMult: 0.60,
-    tags: [
-      { cls: 'd-down', label: 'Demand −40%' },
-    ],
+    tags: [{ cls: 'd-down', label: 'Demand −40%' }],
   },
 ];
 
 // ─── State ────────────────────────────────────────────────────────────────────
 
 let placed = [];
-let activeConditions = new Set();
+let nActive = { a: true, b: true, c: true };
+let activeConds = new Set();
 let nextId = 1;
-let movingId = null;
-let moveOX = 0, moveOY = 0;
+let movingId = null, moveOX = 0, moveOY = 0, moveNid = null;
 
-// ─── Formatting ───────────────────────────────────────────────────────────────
+// ─── Format kW ────────────────────────────────────────────────────────────────
 
-function fmt(mw) {
-  const neg = mw < 0;
-  const abs = Math.abs(mw);
-  let s;
-  if (abs === 0)       s = '0 MW';
-  else if (abs >= 1000) s = (abs / 1000).toFixed(1) + ' GW';
-  else if (abs >= 1)   s = abs.toFixed(abs % 1 === 0 ? 0 : 1) + ' MW';
-  else                 s = Math.round(abs * 1000) + ' kW';
+function fmt(kw) {
+  const neg = kw < 0;
+  const s = Math.round(Math.abs(kw)).toLocaleString() + ' kW';
   return neg ? '−' + s : s;
 }
 
-// ─── Effective MW with conditions ─────────────────────────────────────────────
-
-function effectiveMW(type, kind) {
-  const def = kind === 'supply' ? SUPPLY[type] : DEMAND[type];
-  let supMult = 1, demMult = 1, offline = false;
-
-  for (const id of activeConditions) {
-    const c = CONDITIONS.find(x => x.id === id);
-    if (!c) continue;
-    if (c.offlineTags && kind === 'supply') {
-      if (c.offlineTags.some(t => def.tags && def.tags.includes(t))) {
-        offline = true;
-      }
-    }
-    if (c.supplyMult !== undefined && kind === 'supply') supMult *= c.supplyMult;
-    if (c.demandMult !== undefined && kind === 'demand') demMult *= c.demandMult;
-  }
-
-  if (offline) return { mw: 0, offline: true };
-  const mult = kind === 'supply' ? supMult : demMult;
-  return { mw: def.baseMW * mult, offline: false };
+function fmtShort(kw) {
+  const abs = Math.abs(kw);
+  if (abs >= 1000000) return (abs / 1000000).toFixed(1) + 'M';
+  if (abs >= 1000)    return (abs / 1000).toFixed(0) + 'k';
+  return Math.round(abs).toString();
 }
 
-// ─── Balance bar ──────────────────────────────────────────────────────────────
+// ─── Effective kW ─────────────────────────────────────────────────────────────
 
-function updateBalance() {
-  let s = 0, d = 0;
-  for (const item of placed) {
-    const { mw } = effectiveMW(item.type, item.kind);
-    if (item.kind === 'supply') s += mw;
-    else d += mw;
+function effectiveKW(type, kind) {
+  const def = kind === 'supply' ? SUPPLY[type] : DEMAND[type];
+  let sMult = 1, dMult = 1, offline = false;
+  for (const id of activeConds) {
+    const c = CONDITIONS.find(x => x.id === id);
+    if (!c) continue;
+    if (c.offlineTags && kind === 'supply' && c.offlineTags.some(t => def.tags && def.tags.includes(t)))
+      offline = true;
+    if (c.supplyMult !== undefined && kind === 'supply') sMult *= c.supplyMult;
+    if (c.demandMult !== undefined && kind === 'demand') dMult *= c.demandMult;
   }
+  if (offline) return { kw: 0, offline: true };
+  return { kw: def.baseKW * (kind === 'supply' ? sMult : dMult), offline: false };
+}
 
-  document.getElementById('tot-s').textContent = fmt(s);
-  document.getElementById('tot-d').textContent = fmt(d);
+// ─── Gauge ────────────────────────────────────────────────────────────────────
 
-  const total = Math.max(s, d, 0.001);
-  document.getElementById('bar-s').style.width = (s / total * 100) + '%';
-  document.getElementById('bar-d').style.width = (d / total * 100) + '%';
+const GCX = 90, GCY = 80, GR = 68;
 
-  const badge = document.getElementById('badge');
-  const diff = s - d;
-  if (s === 0 && d === 0) {
-    badge.textContent = '—'; badge.className = 'balanced';
-  } else if (Math.abs(diff) < 0.001) {
-    badge.textContent = 'Balanced'; badge.className = 'balanced';
-  } else if (diff > 0) {
-    badge.textContent = '+' + fmt(diff) + ' surplus'; badge.className = 'surplus';
+function gaugePt(f, r) {
+  r = r !== undefined ? r : GR;
+  const t = Math.PI * (1 - Math.max(0, Math.min(1, f)));
+  return { x: GCX + r * Math.cos(t), y: GCY - r * Math.sin(t) };
+}
+
+function gaugeArc(f1, f2) {
+  f1 = Math.max(0, Math.min(1, f1));
+  f2 = Math.max(0, Math.min(1, f2));
+  if (Math.abs(f2 - f1) < 0.001) return '';
+  const p1 = gaugePt(f1), p2 = gaugePt(f2);
+  // sweep=0: counter-clockwise in SVG = goes through top (correct for our gauge)
+  return `M ${p1.x.toFixed(2)},${p1.y.toFixed(2)} A ${GR},${GR} 0 0,0 ${p2.x.toFixed(2)},${p2.y.toFixed(2)}`;
+}
+
+function updateGauge(totalS, totalD) {
+  const hasData = totalS > 0 || totalD > 0;
+  const max = hasData ? Math.max(totalS, totalD) * 1.25 : 1000;
+  const sf = totalS / max;
+  const df = totalD / max;
+  const deficit = totalS < totalD && totalD > 0;
+
+  // Background arc
+  document.getElementById('g-bg').setAttribute('d', gaugeArc(0, 1));
+
+  // Supply fill arc
+  const fill = document.getElementById('g-fill');
+  if (totalS > 0) {
+    fill.setAttribute('d', gaugeArc(0, sf));
+    fill.setAttribute('stroke', deficit ? '#ef4444' : '#22c55e');
+    fill.style.opacity = '1';
   } else {
-    badge.textContent = fmt(Math.abs(diff)) + ' deficit'; badge.className = 'deficit';
+    fill.style.opacity = '0';
   }
 
-  // Refresh each placed item's display
-  for (const item of placed) {
-    const el = document.getElementById('pi-' + item.id);
-    if (!el) continue;
-    const { mw, offline } = effectiveMW(item.type, item.kind);
-    el.querySelector('.pl-mw').textContent = fmt(mw);
-    el.classList.toggle('offline', offline);
+  // Demand zone (subtle highlight from 0 → demand)
+  const dzone = document.getElementById('g-demand-zone');
+  if (totalD > 0) {
+    dzone.setAttribute('d', gaugeArc(0, df));
+    dzone.style.opacity = '.5';
+  } else {
+    dzone.style.opacity = '0';
   }
+
+  // Demand tick
+  const dtick = document.getElementById('g-dtick');
+  const dlbl  = document.getElementById('g-dlbl');
+  if (totalD > 0 && df <= 1) {
+    const inner = gaugePt(df, GR - 9);
+    const outer = gaugePt(df, GR + 9);
+    dtick.setAttribute('x1', inner.x.toFixed(1)); dtick.setAttribute('y1', inner.y.toFixed(1));
+    dtick.setAttribute('x2', outer.x.toFixed(1)); dtick.setAttribute('y2', outer.y.toFixed(1));
+    dtick.setAttribute('stroke', deficit ? '#f97316' : '#22c55e');
+    dtick.style.opacity = '1';
+    const lp = gaugePt(df, GR + 20);
+    dlbl.setAttribute('x', lp.x.toFixed(1));
+    dlbl.setAttribute('y', (lp.y + 2).toFixed(1));
+    dlbl.textContent = 'DEMAND';
+    dlbl.setAttribute('fill', deficit ? '#f97316' : '#22c55e');
+  } else {
+    dtick.style.opacity = '0';
+    dlbl.textContent = '';
+  }
+
+  // Needle
+  const needle = document.getElementById('g-needle');
+  const np = gaugePt(sf);
+  needle.setAttribute('x2', np.x.toFixed(2));
+  needle.setAttribute('y2', np.y.toFixed(2));
+  needle.setAttribute('stroke', deficit ? '#ef4444' : '#e2e8f0');
+
+  // Max label
+  document.getElementById('g-max-lbl').textContent = hasData ? fmtShort(max) : '';
+
+  // Pulse glow
+  document.getElementById('gauge').classList.toggle('deficit', deficit);
 }
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
 
 function renderPalette() {
-  function makeItem(type, def, kind) {
+  function make(type, def, kind) {
     const el = document.createElement('div');
     el.className = 'pal-item ' + kind;
     el.draggable = true;
-    el.dataset.type = type;
-    el.dataset.kind = kind;
+    el.dataset.type = type; el.dataset.kind = kind;
     el.innerHTML = `<span class="p-icon">${def.icon}</span>
-      <div class="p-info">
-        <div class="p-name">${def.label}</div>
-        <div class="p-spec">${def.spec}</div>
-      </div>`;
+      <div><div class="p-name">${def.label}</div><div class="p-spec">${def.spec}</div></div>`;
     el.addEventListener('dragstart', e => {
       e.dataTransfer.effectAllowed = 'copy';
       e.dataTransfer.setData('application/json', JSON.stringify({ type, kind }));
     });
     return el;
   }
-
   const sp = document.getElementById('sup-pal');
   const dp = document.getElementById('dem-pal');
   sp.innerHTML = ''; dp.innerHTML = '';
-  for (const [t, d] of Object.entries(SUPPLY)) sp.appendChild(makeItem(t, d, 'supply'));
-  for (const [t, d] of Object.entries(DEMAND))  dp.appendChild(makeItem(t, d, 'demand'));
+  for (const [t,d] of Object.entries(SUPPLY)) sp.appendChild(make(t, d, 'supply'));
+  for (const [t,d] of Object.entries(DEMAND))  dp.appendChild(make(t, d, 'demand'));
 }
 
-// ─── Workspace drop ───────────────────────────────────────────────────────────
+// ─── Layout & connection lines ────────────────────────────────────────────────
 
-const ws = document.getElementById('workspace');
+function layoutWorkspace() {
+  const ws = document.getElementById('workspace');
+  const W = ws.offsetWidth, H = ws.offsetHeight;
 
-ws.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
+  const zones = {
+    a: { l: 0.01*W, t: 0.06*H, w: 0.28*W, h: 0.87*H },
+    b: { l: 0.63*W, t: 0.04*H, w: 0.35*W, h: 0.43*H },
+    c: { l: 0.63*W, t: 0.55*H, w: 0.35*W, h: 0.40*H },
+  };
+  for (const [nid, z] of Object.entries(zones)) {
+    const el = document.getElementById('n-' + nid);
+    el.style.left = z.l + 'px'; el.style.top  = z.t + 'px';
+    el.style.width = z.w + 'px'; el.style.height = z.h + 'px';
+  }
 
-ws.addEventListener('drop', e => {
-  e.preventDefault();
-  let data;
-  try { data = JSON.parse(e.dataTransfer.getData('application/json')); } catch { return; }
-  const rect = ws.getBoundingClientRect();
-  addPlaced(data.type, data.kind, e.clientX - rect.left - 59, e.clientY - rect.top - 28);
+  const sub = document.getElementById('substation');
+  const sw = 158;
+  sub.style.width = sw + 'px';
+  sub.style.left = (W * 0.335) + 'px';
+  sub.style.top  = (H * 0.5 - sub.offsetHeight / 2) + 'px';
+
+  drawLines();
+}
+
+function drawLines() {
+  const ws  = document.getElementById('workspace');
+  const svg = document.getElementById('lines');
+  const wsR = ws.getBoundingClientRect();
+
+  function edge(el, side) {
+    const r = el.getBoundingClientRect();
+    const x = r.left - wsR.left, y = r.top - wsR.top;
+    if (side === 'left')  return { x: x,          y: y + r.height/2 };
+    if (side === 'right') return { x: x + r.width, y: y + r.height/2 };
+  }
+
+  const sub = document.getElementById('substation');
+  const na  = document.getElementById('n-a');
+  const nb  = document.getElementById('n-b');
+  const nc  = document.getElementById('n-c');
+
+  const sL = edge(sub, 'left'), sR = edge(sub, 'right');
+  const aR = edge(na, 'right');
+  const bL = edge(nb, 'left');
+  const cL = edge(nc, 'left');
+
+  function ln(p1, p2, nid) {
+    return `<line class="conn-line ${nActive[nid] ? 'active' : 'off'}"
+      x1="${p1.x.toFixed(1)}" y1="${p1.y.toFixed(1)}"
+      x2="${p2.x.toFixed(1)}" y2="${p2.y.toFixed(1)}"/>`;
+  }
+  svg.innerHTML = ln(sL, aR, 'a') + ln(sR, bL, 'b') + ln(sR, cL, 'c');
+}
+
+// ─── Neighborhood drop ────────────────────────────────────────────────────────
+
+['a','b','c'].forEach(nid => {
+  const el = document.getElementById('n-' + nid);
+  el.addEventListener('dragover', e => {
+    e.preventDefault(); e.dataTransfer.dropEffect = 'copy';
+    el.classList.add('nhood-dragover');
+  });
+  el.addEventListener('dragleave', e => {
+    if (!el.contains(e.relatedTarget)) el.classList.remove('nhood-dragover');
+  });
+  el.addEventListener('drop', e => {
+    e.preventDefault(); el.classList.remove('nhood-dragover');
+    let data;
+    try { data = JSON.parse(e.dataTransfer.getData('application/json')); } catch { return; }
+    const body = document.getElementById('nb-' + nid);
+    const br = body.getBoundingClientRect();
+    addPlaced(data.type, data.kind, nid, e.clientX - br.left - 54, e.clientY - br.top - 24);
+  });
 });
 
 // ─── Placed items ─────────────────────────────────────────────────────────────
 
-function addPlaced(type, kind, x, y) {
+function addPlaced(type, kind, nid, x, y) {
   const id = nextId++;
-  placed.push({ id, type, kind, x, y });
-
+  placed.push({ id, type, kind, nid, x, y });
   const def = kind === 'supply' ? SUPPLY[type] : DEMAND[type];
-  const { mw, offline } = effectiveMW(type, kind);
+  const { kw, offline } = effectiveKW(type, kind);
 
+  const body = document.getElementById('nb-' + nid);
   const el = document.createElement('div');
   el.id = 'pi-' + id;
   el.className = 'placed ' + kind + (offline ? ' offline' : '');
-  el.style.left = Math.max(0, x) + 'px';
-  el.style.top  = Math.max(0, y) + 'px';
+  el.style.left = Math.max(4, x) + 'px';
+  el.style.top  = Math.max(4, y) + 'px';
   el.innerHTML = `
     <div class="pl-head">
       <div class="pl-title">${def.icon} ${def.label}</div>
-      <button class="pl-del" data-id="${id}" title="Remove">×</button>
+      <button class="pl-del" data-id="${id}">×</button>
     </div>
-    <div class="pl-mw">${fmt(mw)}</div>
-    <div class="pl-offline-tag">OFFLINE</div>
+    <div class="pl-kw">${fmt(kw)}</div>
+    <div class="pl-off-tag">OFFLINE</div>
   `;
-
   el.querySelector('.pl-del').addEventListener('click', e => {
-    e.stopPropagation();
-    removePlaced(id);
+    e.stopPropagation(); removePlaced(id);
   });
-
   el.addEventListener('mousedown', onItemMouseDown);
-  ws.appendChild(el);
+  body.appendChild(el);
 
-  document.getElementById('drop-hint').style.opacity = '0';
+  const hint = body.querySelector('.nhood-hint');
+  if (hint) hint.style.opacity = '0';
   updateBalance();
 }
 
 function removePlaced(id) {
+  const item = placed.find(i => i.id === id);
+  if (!item) return;
   placed = placed.filter(i => i.id !== id);
   document.getElementById('pi-' + id)?.remove();
-  if (placed.length === 0) document.getElementById('drop-hint').style.opacity = '1';
+  const body = document.getElementById('nb-' + item.nid);
+  if (body && placed.filter(p => p.nid === item.nid).length === 0) {
+    const hint = body.querySelector('.nhood-hint');
+    if (hint) hint.style.opacity = '1';
+  }
   updateBalance();
 }
 
-// ─── Drag placed items ────────────────────────────────────────────────────────
+// ─── Move items ───────────────────────────────────────────────────────────────
 
 function onItemMouseDown(e) {
   if (e.target.classList.contains('pl-del')) return;
   e.preventDefault();
   const el = e.currentTarget;
   const id = parseInt(el.id.replace('pi-', ''));
+  const item = placed.find(i => i.id === id);
+  if (!item) return;
   const rect = el.getBoundingClientRect();
-  movingId = id;
-  moveOX = e.clientX - rect.left;
-  moveOY = e.clientY - rect.top;
-  el.style.zIndex = 50;
-  el.style.boxShadow = '0 8px 32px rgba(0,0,0,.75)';
+  movingId = id; moveNid = item.nid;
+  moveOX = e.clientX - rect.left; moveOY = e.clientY - rect.top;
+  el.style.zIndex = 20;
+  el.style.boxShadow = '0 8px 28px rgba(0,0,0,.8)';
 }
 
 document.addEventListener('mousemove', e => {
   if (movingId === null) return;
   const el = document.getElementById('pi-' + movingId);
   if (!el) return;
-  const wsRect = ws.getBoundingClientRect();
-  const x = Math.max(0, Math.min(e.clientX - wsRect.left - moveOX, wsRect.width  - el.offsetWidth));
-  const y = Math.max(0, Math.min(e.clientY - wsRect.top  - moveOY, wsRect.height - el.offsetHeight));
-  el.style.left = x + 'px';
-  el.style.top  = y + 'px';
+  const body = document.getElementById('nb-' + moveNid);
+  const br = body.getBoundingClientRect();
+  const x = Math.max(0, Math.min(e.clientX - br.left - moveOX, br.width  - el.offsetWidth));
+  const y = Math.max(0, Math.min(e.clientY - br.top  - moveOY, br.height - el.offsetHeight));
+  el.style.left = x + 'px'; el.style.top = y + 'px';
   const item = placed.find(i => i.id === movingId);
   if (item) { item.x = x; item.y = y; }
 });
@@ -631,7 +782,20 @@ document.addEventListener('mouseup', () => {
   if (movingId === null) return;
   const el = document.getElementById('pi-' + movingId);
   if (el) { el.style.zIndex = ''; el.style.boxShadow = ''; }
-  movingId = null;
+  movingId = null; moveNid = null;
+});
+
+// ─── Substation toggles ───────────────────────────────────────────────────────
+
+document.querySelectorAll('.sub-toggle').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const nid = btn.dataset.n;
+    nActive[nid] = !nActive[nid];
+    btn.className = 'sub-toggle ' + (nActive[nid] ? 'on' : 'off');
+    document.getElementById('n-' + nid).classList.toggle('active', nActive[nid]);
+    document.getElementById('n-' + nid).classList.toggle('off',    !nActive[nid]);
+    drawLines(); updateBalance();
+  });
 });
 
 // ─── Conditions ───────────────────────────────────────────────────────────────
@@ -640,38 +804,86 @@ function renderConditions() {
   const body = document.getElementById('cond-body');
   body.innerHTML = '';
   for (const c of CONDITIONS) {
-    const on = activeConditions.has(c.id);
+    const on = activeConds.has(c.id);
     const el = document.createElement('div');
     el.className = 'cond-card' + (on ? ' on' : '');
     el.innerHTML = `
       <div class="cond-top">
-        <div class="cond-check">
-          <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
-            <polyline points="1,4.5 3.5,7 8,1.5" stroke="white" stroke-width="1.5"
+        <div class="cond-chk">
+          <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+            <polyline points="1,4 3,6.5 7,1.5" stroke="white" stroke-width="1.5"
               stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </div>
         <span class="cond-name">${c.icon} ${c.name}</span>
       </div>
       <div class="cond-desc">${c.desc}</div>
-      <div class="cond-tags">
-        ${c.tags.map(t => `<span class="tag ${t.cls}">${t.label}</span>`).join('')}
-      </div>
+      <div class="cond-tags">${c.tags.map(t => `<span class="tag ${t.cls}">${t.label}</span>`).join('')}</div>
     `;
     el.addEventListener('click', () => {
-      activeConditions.has(c.id) ? activeConditions.delete(c.id) : activeConditions.add(c.id);
-      renderConditions();
-      updateBalance();
+      activeConds.has(c.id) ? activeConds.delete(c.id) : activeConds.add(c.id);
+      renderConditions(); updateBalance();
     });
     body.appendChild(el);
   }
+}
+
+// ─── Balance update ───────────────────────────────────────────────────────────
+
+function updateBalance() {
+  const nTotals = { a: {s:0,d:0}, b: {s:0,d:0}, c: {s:0,d:0} };
+
+  for (const item of placed) {
+    const { kw, offline } = effectiveKW(item.type, item.kind);
+    if (item.kind === 'supply') nTotals[item.nid].s += kw;
+    else                        nTotals[item.nid].d += kw;
+    const el = document.getElementById('pi-' + item.id);
+    if (el) {
+      el.querySelector('.pl-kw').textContent = fmt(kw);
+      el.classList.toggle('offline', offline);
+    }
+  }
+
+  for (const nid of ['a','b','c']) {
+    const t = nTotals[nid];
+    const p = { a:'na', b:'nb', c:'nc' }[nid];
+    document.getElementById(p + '-s').textContent = fmt(t.s);
+    document.getElementById(p + '-d').textContent = fmt(t.d);
+  }
+
+  let totalS = 0, totalD = 0;
+  for (const nid of ['a','b','c']) {
+    if (nActive[nid]) { totalS += nTotals[nid].s; totalD += nTotals[nid].d; }
+  }
+
+  document.getElementById('tot-s').textContent = fmt(totalS);
+  document.getElementById('tot-d').textContent = fmt(totalD);
+  document.getElementById('sub-s').textContent = fmt(totalS);
+  document.getElementById('sub-d').textContent = fmt(totalD);
+
+  const badge = document.getElementById('badge');
+  const diff = totalS - totalD;
+  if (totalS === 0 && totalD === 0) {
+    badge.textContent = '—'; badge.className = 'balanced';
+  } else if (Math.abs(diff) < 1) {
+    badge.textContent = 'Balanced'; badge.className = 'balanced';
+  } else if (diff > 0) {
+    badge.textContent = '+' + fmt(diff) + ' surplus'; badge.className = 'surplus';
+  } else {
+    badge.textContent = fmt(Math.abs(diff)) + ' deficit'; badge.className = 'deficit';
+  }
+
+  updateGauge(totalS, totalD);
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
 renderPalette();
 renderConditions();
-updateBalance();
+for (const nid of ['a','b','c']) document.getElementById('n-' + nid).classList.add('active');
+
+requestAnimationFrame(() => { layoutWorkspace(); updateBalance(); });
+window.addEventListener('resize', layoutWorkspace);
 </script>
 </body>
 </html>
