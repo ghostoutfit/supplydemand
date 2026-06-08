@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Supply & Demand Grid</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:         #0f1117;
+    --surface:    #1a1d27;
+    --surface2:   #22263a;
+    --border:     #2e3248;
+    --supply:     #22c55e;
+    --demand:     #f97316;
+    --accent:     #6366f1;
+    --danger:     #ef4444;
+    --text:       #e2e8f0;
+    --text-dim:   #64748b;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── Header ─────────────────────────────────────────────────────── */
+  #header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-shrink: 0;
+    height: 52px;
+  }
+
+  #header h1 {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+  }
+
+  #balance {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .bal-stat { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+  .bal-stat .lbl { color: var(--text-dim); }
+  .bal-stat .val { font-weight: 700; font-size: 14px; }
+  .s-val { color: var(--supply); }
+  .d-val { color: var(--demand); }
+
+  #bar-wrap {
+    flex: 1;
+    height: 6px;
+    background: var(--surface2);
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+    min-width: 80px;
+  }
+  #bar-s { height: 100%; background: var(--supply); border-radius: 3px; transition: width .3s; }
+  #bar-d {
+    position: absolute; top: 0; height: 100%;
+    background: var(--demand); border-radius: 3px;
+    opacity: .55; transition: width .3s;
+  }
+
+  #badge {
+    padding: 3px 10px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  #badge.surplus  { background: rgba(34,197,94,.13);  color: var(--supply); }
+  #badge.deficit  { background: rgba(249,115,22,.13); color: var(--demand); }
+  #badge.balanced { background: rgba(99,102,241,.13); color: var(--accent); }
+
+  /* ── Main layout ─────────────────────────────────────────────────── */
+  #main { display: flex; flex: 1; overflow: hidden; }
+
+  /* ── Palette ─────────────────────────────────────────────────────── */
+  #palette {
+    width: 176px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .pal-section { padding: 10px; }
+  .pal-section + .pal-section { border-top: 1px solid var(--border); }
+
+  .pal-heading {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+
+  .pal-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 9px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    margin-bottom: 5px;
+    cursor: grab;
+    user-select: none;
+    font-size: 11px;
+    background: var(--surface2);
+    transition: border-color .15s, transform .1s, background .15s;
+  }
+  .pal-item:hover { border-color: var(--accent); transform: translateX(2px); background: var(--surface); }
+  .pal-item:active { cursor: grabbing; }
+  .pal-item.supply { border-left: 3px solid var(--supply); }
+  .pal-item.demand { border-left: 3px solid var(--demand); }
+
+  .p-icon { font-size: 15px; line-height: 1; flex-shrink: 0; }
+  .p-info { flex: 1; min-width: 0; }
+  .p-name { font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .p-spec { font-size: 9px; color: var(--text-dim); margin-top: 1px; }
+
+  /* ── Workspace ───────────────────────────────────────────────────── */
+  #workspace {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background-image:
+      linear-gradient(rgba(46,50,72,.35) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(46,50,72,.35) 1px, transparent 1px);
+    background-size: 40px 40px;
+    background-color: var(--bg);
+  }
+
+  #drop-hint {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: var(--text-dim);
+    font-size: 13px;
+    pointer-events: none;
+    transition: opacity .3s;
+  }
+  #drop-hint svg { opacity: .3; }
+
+  /* ── Placed items ────────────────────────────────────────────────── */
+  .placed {
+    position: absolute;
+    width: 118px;
+    padding: 9px 11px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    cursor: move;
+    user-select: none;
+    box-shadow: 0 2px 10px rgba(0,0,0,.45);
+    transition: box-shadow .15s;
+  }
+  .placed:hover { box-shadow: 0 4px 20px rgba(0,0,0,.65); }
+  .placed.supply { border-top: 3px solid var(--supply); }
+  .placed.demand { border-top: 3px solid var(--demand); }
+
+  .pl-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 5px;
+  }
+  .pl-title {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    line-height: 1.3;
+  }
+  .pl-del {
+    border: none;
+    background: transparent;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    padding: 0 0 0 4px;
+    flex-shrink: 0;
+    border-radius: 3px;
+  }
+  .pl-del:hover { color: var(--danger); }
+
+  .pl-mw {
+    font-size: 14px;
+    font-weight: 800;
+    transition: color .2s;
+  }
+  .placed.supply .pl-mw { color: var(--supply); }
+  .placed.demand .pl-mw { color: var(--demand); }
+
+  .pl-offline-tag {
+    display: none;
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--danger);
+    letter-spacing: .06em;
+    margin-top: 3px;
+  }
+  .placed.offline .pl-mw { opacity: .35; text-decoration: line-through; }
+  .placed.offline .pl-offline-tag { display: block; }
+
+  /* ── Conditions panel ────────────────────────────────────────────── */
+  #conditions {
+    width: 216px;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+
+  #cond-header {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  #cond-body { padding: 10px; overflow-y: auto; flex: 1; }
+
+  .cond-card {
+    padding: 11px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    margin-bottom: 8px;
+    background: var(--surface2);
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+  }
+  .cond-card:hover { border-color: var(--accent); }
+  .cond-card.on { border-color: var(--accent); background: rgba(99,102,241,.09); }
+
+  .cond-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .cond-check {
+    width: 15px; height: 15px;
+    border-radius: 4px;
+    border: 2px solid var(--text-dim);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: background .15s, border-color .15s;
+  }
+  .cond-card.on .cond-check { background: var(--accent); border-color: var(--accent); }
+  .cond-check svg { opacity: 0; transition: opacity .15s; }
+  .cond-card.on .cond-check svg { opacity: 1; }
+
+  .cond-name { font-size: 12px; font-weight: 700; color: var(--text); }
+
+  .cond-desc { font-size: 10px; color: var(--text-dim); line-height: 1.45; margin-bottom: 7px; }
+
+  .cond-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+  .tag {
+    display: inline-flex; align-items: center; gap: 3px;
+    font-size: 9px; font-weight: 700;
+    padding: 2px 6px; border-radius: 4px;
+  }
+  .tag.s-down { background: rgba(239,68,68,.14); color: #f87171; }
+  .tag.d-up   { background: rgba(249,115,22,.14); color: var(--demand); }
+  .tag.s-off  { background: rgba(100,116,139,.14); color: #94a3b8; }
+  .tag.d-down { background: rgba(34,197,94,.14);  color: var(--supply); }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <h1>⚡ Energy Grid</h1>
+  <div id="balance">
+    <div class="bal-stat">
+      <span class="lbl">Supply</span>
+      <span class="val s-val" id="tot-s">0 MW</span>
+    </div>
+    <div class="bal-stat">
+      <span class="lbl">Demand</span>
+      <span class="val d-val" id="tot-d">0 MW</span>
+    </div>
+    <div id="bar-wrap">
+      <div id="bar-s"></div>
+      <div id="bar-d"></div>
+    </div>
+    <div id="badge" class="balanced">—</div>
+  </div>
+</div>
+
+<div id="main">
+
+  <div id="palette">
+    <div class="pal-section">
+      <div class="pal-heading">Supply</div>
+      <div id="sup-pal"></div>
+    </div>
+    <div class="pal-section">
+      <div class="pal-heading">Demand</div>
+      <div id="dem-pal"></div>
+    </div>
+  </div>
+
+  <div id="workspace">
+    <div id="drop-hint">
+      <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+        <rect x="4" y="4" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/>
+        <rect x="22" y="4" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/>
+        <rect x="4" y="22" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/>
+        <rect x="22" y="22" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/>
+      </svg>
+      Drag items from the left panel
+    </div>
+  </div>
+
+  <div id="conditions">
+    <div id="cond-header">Conditions</div>
+    <div id="cond-body"></div>
+  </div>
+
+</div>
+
+<script>
+// ─── Definitions ──────────────────────────────────────────────────────────────
+
+const SUPPLY = {
+  coal:    { label: 'Coal Plant',    icon: '🏭', baseMW: 500,   spec: '500 MW',   tags: [] },
+  nuclear: { label: 'Nuclear Plant', icon: '⚛️',  baseMW: 1000,  spec: '1,000 MW', tags: [] },
+  gas:     { label: 'Gas Plant',     icon: '🔥', baseMW: 400,   spec: '400 MW',   tags: [] },
+  wind:    { label: 'Wind Farm',     icon: '🌬️', baseMW: 150,   spec: '150 MW',   tags: ['wind','renewable'] },
+  solar:   { label: 'Solar Farm',    icon: '☀️', baseMW: 200,   spec: '200 MW',   tags: ['solar','renewable'] },
+  hydro:   { label: 'Hydro Dam',     icon: '💧', baseMW: 300,   spec: '300 MW',   tags: ['hydro'] },
+};
+
+const DEMAND = {
+  house:      { label: 'House',          icon: '🏠', baseMW: 0.003, spec: '3 kW'    },
+  hospital:   { label: 'Hospital',       icon: '🏥', baseMW: 2,     spec: '2 MW'    },
+  restaurant: { label: 'Restaurant',     icon: '🍽️', baseMW: 0.05,  spec: '50 kW'   },
+  store:      { label: 'Store',          icon: '🏪', baseMW: 0.1,   spec: '100 kW'  },
+  police:     { label: 'Police Station', icon: '🚔', baseMW: 0.5,   spec: '500 kW'  },
+  school:     { label: 'School',         icon: '🏫', baseMW: 0.3,   spec: '300 kW'  },
+  factory:    { label: 'Factory',        icon: '🏗️', baseMW: 5,     spec: '5 MW'    },
+};
+
+// Conditions: supplyMult and demandMult compound multiplicatively when stacked.
+// offlineTags: supply items whose tags intersect are taken offline entirely.
+const CONDITIONS = [
+  {
+    id: 'winterCrisis',
+    name: 'Winter Crisis',
+    icon: '❄️',
+    desc: 'Extreme cold drives heating demand up and strains ageing infrastructure.',
+    supplyMult: 0.60,
+    demandMult: 1.20,
+    tags: [
+      { cls: 'd-up',   label: 'Demand +20%' },
+      { cls: 's-down', label: 'Supply −40%' },
+    ],
+  },
+  {
+    id: 'windlessNight',
+    name: 'Windless Night',
+    icon: '🌑',
+    desc: 'No wind and no sunlight — wind turbines and solar panels go dark.',
+    offlineTags: ['wind','solar'],
+    tags: [
+      { cls: 's-off', label: 'Wind offline' },
+      { cls: 's-off', label: 'Solar offline' },
+    ],
+  },
+  {
+    id: 'heatwave',
+    name: 'Heatwave',
+    icon: '🌡️',
+    desc: 'Record temperatures push air conditioning to its limits.',
+    demandMult: 1.35,
+    tags: [
+      { cls: 'd-up', label: 'Demand +35%' },
+    ],
+  },
+  {
+    id: 'peakHours',
+    name: 'Peak Hours',
+    icon: '⏰',
+    desc: 'Rush-hour load spike — everyone home, cooking, charging.',
+    demandMult: 1.15,
+    tags: [
+      { cls: 'd-up', label: 'Demand +15%' },
+    ],
+  },
+  {
+    id: 'offpeak',
+    name: 'Off-Peak Night',
+    icon: '🌙',
+    desc: 'Late night lull — most buildings idle, demand drops.',
+    demandMult: 0.60,
+    tags: [
+      { cls: 'd-down', label: 'Demand −40%' },
+    ],
+  },
+];
+
+// ─── State ────────────────────────────────────────────────────────────────────
+
+let placed = [];
+let activeConditions = new Set();
+let nextId = 1;
+let movingId = null;
+let moveOX = 0, moveOY = 0;
+
+// ─── Formatting ───────────────────────────────────────────────────────────────
+
+function fmt(mw) {
+  const neg = mw < 0;
+  const abs = Math.abs(mw);
+  let s;
+  if (abs === 0)       s = '0 MW';
+  else if (abs >= 1000) s = (abs / 1000).toFixed(1) + ' GW';
+  else if (abs >= 1)   s = abs.toFixed(abs % 1 === 0 ? 0 : 1) + ' MW';
+  else                 s = Math.round(abs * 1000) + ' kW';
+  return neg ? '−' + s : s;
+}
+
+// ─── Effective MW with conditions ─────────────────────────────────────────────
+
+function effectiveMW(type, kind) {
+  const def = kind === 'supply' ? SUPPLY[type] : DEMAND[type];
+  let supMult = 1, demMult = 1, offline = false;
+
+  for (const id of activeConditions) {
+    const c = CONDITIONS.find(x => x.id === id);
+    if (!c) continue;
+    if (c.offlineTags && kind === 'supply') {
+      if (c.offlineTags.some(t => def.tags && def.tags.includes(t))) {
+        offline = true;
+      }
+    }
+    if (c.supplyMult !== undefined && kind === 'supply') supMult *= c.supplyMult;
+    if (c.demandMult !== undefined && kind === 'demand') demMult *= c.demandMult;
+  }
+
+  if (offline) return { mw: 0, offline: true };
+  const mult = kind === 'supply' ? supMult : demMult;
+  return { mw: def.baseMW * mult, offline: false };
+}
+
+// ─── Balance bar ──────────────────────────────────────────────────────────────
+
+function updateBalance() {
+  let s = 0, d = 0;
+  for (const item of placed) {
+    const { mw } = effectiveMW(item.type, item.kind);
+    if (item.kind === 'supply') s += mw;
+    else d += mw;
+  }
+
+  document.getElementById('tot-s').textContent = fmt(s);
+  document.getElementById('tot-d').textContent = fmt(d);
+
+  const total = Math.max(s, d, 0.001);
+  document.getElementById('bar-s').style.width = (s / total * 100) + '%';
+  document.getElementById('bar-d').style.width = (d / total * 100) + '%';
+
+  const badge = document.getElementById('badge');
+  const diff = s - d;
+  if (s === 0 && d === 0) {
+    badge.textContent = '—'; badge.className = 'balanced';
+  } else if (Math.abs(diff) < 0.001) {
+    badge.textContent = 'Balanced'; badge.className = 'balanced';
+  } else if (diff > 0) {
+    badge.textContent = '+' + fmt(diff) + ' surplus'; badge.className = 'surplus';
+  } else {
+    badge.textContent = fmt(Math.abs(diff)) + ' deficit'; badge.className = 'deficit';
+  }
+
+  // Refresh each placed item's display
+  for (const item of placed) {
+    const el = document.getElementById('pi-' + item.id);
+    if (!el) continue;
+    const { mw, offline } = effectiveMW(item.type, item.kind);
+    el.querySelector('.pl-mw').textContent = fmt(mw);
+    el.classList.toggle('offline', offline);
+  }
+}
+
+// ─── Palette ──────────────────────────────────────────────────────────────────
+
+function renderPalette() {
+  function makeItem(type, def, kind) {
+    const el = document.createElement('div');
+    el.className = 'pal-item ' + kind;
+    el.draggable = true;
+    el.dataset.type = type;
+    el.dataset.kind = kind;
+    el.innerHTML = `<span class="p-icon">${def.icon}</span>
+      <div class="p-info">
+        <div class="p-name">${def.label}</div>
+        <div class="p-spec">${def.spec}</div>
+      </div>`;
+    el.addEventListener('dragstart', e => {
+      e.dataTransfer.effectAllowed = 'copy';
+      e.dataTransfer.setData('application/json', JSON.stringify({ type, kind }));
+    });
+    return el;
+  }
+
+  const sp = document.getElementById('sup-pal');
+  const dp = document.getElementById('dem-pal');
+  sp.innerHTML = ''; dp.innerHTML = '';
+  for (const [t, d] of Object.entries(SUPPLY)) sp.appendChild(makeItem(t, d, 'supply'));
+  for (const [t, d] of Object.entries(DEMAND))  dp.appendChild(makeItem(t, d, 'demand'));
+}
+
+// ─── Workspace drop ───────────────────────────────────────────────────────────
+
+const ws = document.getElementById('workspace');
+
+ws.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
+
+ws.addEventListener('drop', e => {
+  e.preventDefault();
+  let data;
+  try { data = JSON.parse(e.dataTransfer.getData('application/json')); } catch { return; }
+  const rect = ws.getBoundingClientRect();
+  addPlaced(data.type, data.kind, e.clientX - rect.left - 59, e.clientY - rect.top - 28);
+});
+
+// ─── Placed items ─────────────────────────────────────────────────────────────
+
+function addPlaced(type, kind, x, y) {
+  const id = nextId++;
+  placed.push({ id, type, kind, x, y });
+
+  const def = kind === 'supply' ? SUPPLY[type] : DEMAND[type];
+  const { mw, offline } = effectiveMW(type, kind);
+
+  const el = document.createElement('div');
+  el.id = 'pi-' + id;
+  el.className = 'placed ' + kind + (offline ? ' offline' : '');
+  el.style.left = Math.max(0, x) + 'px';
+  el.style.top  = Math.max(0, y) + 'px';
+  el.innerHTML = `
+    <div class="pl-head">
+      <div class="pl-title">${def.icon} ${def.label}</div>
+      <button class="pl-del" data-id="${id}" title="Remove">×</button>
+    </div>
+    <div class="pl-mw">${fmt(mw)}</div>
+    <div class="pl-offline-tag">OFFLINE</div>
+  `;
+
+  el.querySelector('.pl-del').addEventListener('click', e => {
+    e.stopPropagation();
+    removePlaced(id);
+  });
+
+  el.addEventListener('mousedown', onItemMouseDown);
+  ws.appendChild(el);
+
+  document.getElementById('drop-hint').style.opacity = '0';
+  updateBalance();
+}
+
+function removePlaced(id) {
+  placed = placed.filter(i => i.id !== id);
+  document.getElementById('pi-' + id)?.remove();
+  if (placed.length === 0) document.getElementById('drop-hint').style.opacity = '1';
+  updateBalance();
+}
+
+// ─── Drag placed items ────────────────────────────────────────────────────────
+
+function onItemMouseDown(e) {
+  if (e.target.classList.contains('pl-del')) return;
+  e.preventDefault();
+  const el = e.currentTarget;
+  const id = parseInt(el.id.replace('pi-', ''));
+  const rect = el.getBoundingClientRect();
+  movingId = id;
+  moveOX = e.clientX - rect.left;
+  moveOY = e.clientY - rect.top;
+  el.style.zIndex = 50;
+  el.style.boxShadow = '0 8px 32px rgba(0,0,0,.75)';
+}
+
+document.addEventListener('mousemove', e => {
+  if (movingId === null) return;
+  const el = document.getElementById('pi-' + movingId);
+  if (!el) return;
+  const wsRect = ws.getBoundingClientRect();
+  const x = Math.max(0, Math.min(e.clientX - wsRect.left - moveOX, wsRect.width  - el.offsetWidth));
+  const y = Math.max(0, Math.min(e.clientY - wsRect.top  - moveOY, wsRect.height - el.offsetHeight));
+  el.style.left = x + 'px';
+  el.style.top  = y + 'px';
+  const item = placed.find(i => i.id === movingId);
+  if (item) { item.x = x; item.y = y; }
+});
+
+document.addEventListener('mouseup', () => {
+  if (movingId === null) return;
+  const el = document.getElementById('pi-' + movingId);
+  if (el) { el.style.zIndex = ''; el.style.boxShadow = ''; }
+  movingId = null;
+});
+
+// ─── Conditions ───────────────────────────────────────────────────────────────
+
+function renderConditions() {
+  const body = document.getElementById('cond-body');
+  body.innerHTML = '';
+  for (const c of CONDITIONS) {
+    const on = activeConditions.has(c.id);
+    const el = document.createElement('div');
+    el.className = 'cond-card' + (on ? ' on' : '');
+    el.innerHTML = `
+      <div class="cond-top">
+        <div class="cond-check">
+          <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
+            <polyline points="1,4.5 3.5,7 8,1.5" stroke="white" stroke-width="1.5"
+              stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span class="cond-name">${c.icon} ${c.name}</span>
+      </div>
+      <div class="cond-desc">${c.desc}</div>
+      <div class="cond-tags">
+        ${c.tags.map(t => `<span class="tag ${t.cls}">${t.label}</span>`).join('')}
+      </div>
+    `;
+    el.addEventListener('click', () => {
+      activeConditions.has(c.id) ? activeConditions.delete(c.id) : activeConditions.add(c.id);
+      renderConditions();
+      updateBalance();
+    });
+    body.appendChild(el);
+  }
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+
+renderPalette();
+renderConditions();
+updateBalance();
+</script>
+</body>
+</html>
