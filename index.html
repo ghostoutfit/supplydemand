@@ -30,7 +30,7 @@ body {
   overflow: hidden;
 }
 
-/* ── Header ───────────────────────────────────────────────────── */
+/* ── Header ──────────────────────────────────────────────────── */
 #header {
   background: var(--surface);
   border-bottom: 1px solid var(--border);
@@ -43,16 +43,13 @@ body {
 }
 #header h1 { font-size: 13px; font-weight: 700; white-space: nowrap; }
 
-#hbal {
-  flex: 1; display: flex; align-items: center;
-  justify-content: center; gap: 12px;
-}
+#hbal { flex: 1; display: flex; align-items: center; justify-content: center; gap: 12px; }
 .hstat { display: flex; align-items: center; gap: 5px; font-size: 11px; }
 .hstat .lbl { color: var(--dim); }
 .hstat .val { font-weight: 800; font-size: 14px; font-variant-numeric: tabular-nums; }
 .sv { color: var(--supply); }
 .dv { color: var(--demand); }
-.hdiv { color: var(--border); font-size: 14px; }
+.hdiv { color: var(--border); }
 
 #badge {
   padding: 2px 9px; border-radius: 10px;
@@ -62,94 +59,123 @@ body {
 #badge.deficit  { background: rgba(239,68,68,.13);  color: var(--danger); }
 #badge.balanced { background: rgba(99,102,241,.13); color: var(--accent); }
 
-/* ── Main ──────────────────────────────────────────────────────── */
+/* Wiring toggle */
+#wiring-label {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; color: var(--dim);
+  cursor: pointer; user-select: none;
+  white-space: nowrap;
+}
+#wiring-label input { accent-color: var(--accent); cursor: pointer; }
+#wiring-label:hover { color: var(--text); }
+
+/* ── Main ─────────────────────────────────────────────────────── */
 #main { display: flex; flex: 1; overflow: hidden; }
 
-/* ── Left panel ─────────────────────────────────────────────────── */
+/* ── Left panel ───────────────────────────────────────────────── */
 #left-panel {
   width: 196px;
   background: var(--surface);
   border-right: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  overflow: hidden;
+  display: flex; flex-direction: column;
+  flex-shrink: 0; overflow: hidden;
 }
 
-/* Gauge section */
-#gauge-section {
-  padding: 12px 12px 6px;
+/* Supply vs Demand bar chart */
+#chart-section {
+  padding: 12px 14px 10px;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
-#gauge { overflow: visible; display: block; width: 100%; height: auto; }
+#chart-title {
+  font-size: 9px; font-weight: 800; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--dim);
+  margin-bottom: 10px;
+}
+#sd-chart {
+  display: flex; align-items: flex-end;
+  gap: 10px; height: 120px;
+}
+.sd-col { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; }
+.sd-val {
+  font-size: 10px; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 5px; text-align: center;
+  min-height: 14px; line-height: 1;
+}
+.sd-val.sv { color: var(--supply); }
+.sd-val.dv { color: var(--demand); }
+.sd-track {
+  flex: 1; width: 100%;
+  background: var(--surface2);
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  display: flex; align-items: flex-end;
+  position: relative;
+}
+.sd-bar {
+  width: 100%; border-radius: 4px 4px 0 0;
+  transition: height .4s cubic-bezier(.4,0,.2,1);
+}
+.sd-bar.supply { background: var(--supply); }
+.sd-bar.demand { background: var(--demand); }
+.sd-lbl {
+  font-size: 9px; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--dim);
+  font-weight: 700; margin-top: 5px;
+}
 
-@keyframes pulse-red {
-  0%, 100% { filter: drop-shadow(0 0 3px rgba(239,68,68,.5)); }
-  50%       { filter: drop-shadow(0 0 10px rgba(239,68,68,.9)); }
+#sd-sep {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: flex-end;
+  padding-bottom: 22px; gap: 4px; flex-shrink: 0;
 }
-#gauge.deficit { animation: pulse-red 1s ease-in-out infinite; }
+#sd-diff {
+  font-size: 10px; font-weight: 800;
+  text-align: center; padding: 3px 7px;
+  border-radius: 8px; white-space: nowrap;
+}
+#sd-diff.surplus  { background: rgba(34,197,94,.12); color: var(--supply); }
+#sd-diff.deficit  { background: rgba(239,68,68,.12); color: var(--danger); }
+#sd-diff.balanced { background: rgba(99,102,241,.12); color: var(--accent); }
 
-#gauge-nums {
-  display: flex; justify-content: space-between;
-  padding: 4px 2px 0;
-  font-size: 10px;
+/* deficit glow on chart */
+@keyframes deficit-pulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+  50%      { box-shadow: 0 0 0 2px rgba(239,68,68,.35); }
 }
-#gauge-nums .gs { color: var(--supply); font-weight: 700; }
-#gauge-nums .gd { color: var(--demand); font-weight: 700; }
+#chart-section.deficit { animation: deficit-pulse 1.2s ease-in-out infinite; border-radius: 6px; }
 
-/* Supply palette section */
-#supply-section {
-  flex: 1; overflow-y: auto;
-  padding: 10px;
-}
-.sec-head {
-  font-size: 9px; font-weight: 800;
-  letter-spacing: .1em; text-transform: uppercase;
-  color: var(--dim); margin-bottom: 5px;
-}
-.sec-note {
-  font-size: 9px; color: var(--dim);
-  font-style: italic; margin-bottom: 8px; line-height: 1.35;
-}
+/* Supply palette */
+#supply-section { flex: 1; overflow-y: auto; padding: 10px; }
 
-/* ── Right panel ────────────────────────────────────────────────── */
+/* ── Right panel ──────────────────────────────────────────────── */
 #right-panel {
-  width: 230px;
+  width: 228px;
   background: var(--surface);
   border-left: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  overflow: hidden;
+  display: flex; flex-direction: column;
+  flex-shrink: 0; overflow: hidden;
 }
+#demand-section { flex: 0 0 auto; max-height: 47%; overflow-y: auto; padding: 10px; border-bottom: 1px solid var(--border); }
+#cond-section   { flex: 1; overflow-y: auto; padding: 10px; }
 
-/* Demand palette */
-#demand-section {
-  flex: 0 0 auto;
-  max-height: 46%;
-  overflow-y: auto;
-  padding: 10px;
-  border-bottom: 1px solid var(--border);
-}
+.sec-head { font-size: 9px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--dim); margin-bottom: 5px; }
+.sec-note { font-size: 9px; color: var(--dim); font-style: italic; margin-bottom: 8px; line-height: 1.35; }
 
-/* Conditions (compact) */
-#cond-section { flex: 1; overflow-y: auto; padding: 10px; }
-
+/* Compact condition rows */
 .cond-row {
-  display: flex; align-items: center;
-  justify-content: space-between;
-  padding: 6px 9px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 8px; border-radius: 6px;
   border: 1px solid var(--border);
   margin-bottom: 4px; cursor: pointer;
-  background: var(--surface2);
-  gap: 7px;
+  background: var(--surface2); gap: 6px;
   transition: border-color .15s;
 }
 .cond-row:hover { border-color: var(--accent); }
 .cond-row.on { border-color: var(--accent); background: rgba(99,102,241,.08); }
-
-.cr-left { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; }
+.cr-left { display: flex; align-items: center; gap: 5px; flex: 1; min-width: 0; }
 .cr-chk {
   width: 13px; height: 13px; border-radius: 3px;
   border: 2px solid var(--dim); flex-shrink: 0;
@@ -160,9 +186,9 @@ body {
 .cr-chk svg { opacity: 0; transition: opacity .15s; }
 .cond-row.on .cr-chk svg { opacity: 1; }
 .cr-name { font-size: 10px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cr-tags { display: flex; gap: 3px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; max-width: 80px; }
+.cr-tags { display: flex; gap: 3px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; max-width: 78px; }
 
-/* Shared palette item style */
+/* Shared palette item */
 .pal-item {
   display: flex; align-items: center; gap: 7px;
   padding: 7px 9px; border-radius: 6px;
@@ -180,18 +206,15 @@ body {
 .p-name { font-weight: 600; font-size: 11px; }
 .p-spec { font-size: 9px; color: var(--dim); margin-top: 1px; }
 
-/* Tags */
 .tag { font-size: 9px; font-weight: 700; padding: 2px 5px; border-radius: 3px; }
 .tag.s-down { background: rgba(239,68,68,.14); color: #f87171; }
 .tag.d-up   { background: rgba(249,115,22,.14); color: var(--demand); }
 .tag.s-off  { background: rgba(100,116,139,.14); color: #94a3b8; }
 .tag.d-down { background: rgba(34,197,94,.14);  color: var(--supply); }
 
-/* ── Workspace ──────────────────────────────────────────────────── */
+/* ── Workspace ────────────────────────────────────────────────── */
 #workspace {
-  flex: 1;
-  position: relative;
-  overflow: hidden;
+  flex: 1; position: relative; overflow: hidden;
   background-image:
     linear-gradient(rgba(46,50,72,.3) 1px, transparent 1px),
     linear-gradient(90deg, rgba(46,50,72,.3) 1px, transparent 1px);
@@ -199,27 +222,32 @@ body {
   background-color: var(--bg);
 }
 
+/* Connection lines – hidden by default, shown when #show-wiring checked */
 #lines {
   position: absolute; inset: 0;
   width: 100%; height: 100%;
   pointer-events: none; overflow: visible;
+  opacity: 0; transition: opacity .3s;
 }
-.conn-line { stroke: #3b4166; stroke-width: 2; fill: none; stroke-dasharray: 6 4; }
-.conn-line.active { stroke: var(--accent); opacity: .55; }
-.conn-line.off    { stroke: #252840; opacity: .35; }
-.conn-line.supply-line { stroke: var(--supply); opacity: .4; stroke-dasharray: 5 3; }
+#lines.show { opacity: 1; }
 
-/* ── Supply zone ────────────────────────────────────────────────── */
+.conn-line {
+  fill: none; stroke-width: 3;
+  stroke-linecap: round;
+}
+.conn-line.supply-line { stroke: #4ade80; }
+.conn-line.active      { stroke: #818cf8; }
+.conn-line.off         { stroke: #475569; stroke-dasharray: 5 5; stroke-width: 2; }
+
+/* ── Supply zone ──────────────────────────────────────────────── */
 #supply-zone {
   position: absolute;
   border: 1.5px dashed rgba(34,197,94,.35);
   border-radius: 10px;
   display: flex; flex-direction: column;
-  overflow: hidden;
-  transition: border-color .15s;
+  overflow: hidden; transition: border-color .15s;
 }
 #supply-zone.dragover { border-color: var(--supply); background: rgba(34,197,94,.03); }
-
 #sz-header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 5px 10px;
@@ -227,43 +255,31 @@ body {
   border-bottom: 1px solid rgba(34,197,94,.15);
   flex-shrink: 0;
 }
-#sz-title {
-  font-size: 10px; font-weight: 700;
-  letter-spacing: .06em; text-transform: uppercase;
-  color: rgba(34,197,94,.7);
-}
+#sz-title { font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: rgba(34,197,94,.7); }
 #sz-total { font-size: 9px; color: var(--supply); font-weight: 600; }
-#sz-body { flex: 1; position: relative; min-height: 0; }
-#sz-hint {
+#sz-body  { flex: 1; position: relative; min-height: 0; }
+#sz-hint  {
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
   font-size: 10px; color: rgba(34,197,94,.25);
   pointer-events: none; transition: opacity .3s;
 }
 
-/* ── Neighborhoods ─────────────────────────────────────────────── */
+/* ── Neighborhoods ────────────────────────────────────────────── */
 .nhood {
   position: absolute;
-  border: 1.5px dashed var(--border);
-  border-radius: 10px;
+  border: 1.5px dashed var(--border); border-radius: 10px;
   display: flex; flex-direction: column;
-  transition: border-color .2s, opacity .3s;
-  overflow: hidden;
+  transition: border-color .2s, opacity .3s; overflow: hidden;
 }
 .nhood.active { border-color: rgba(99,102,241,.4); }
 .nhood.off    { opacity: .4; border-color: #252840; }
-
 .nhood-header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 5px 10px;
-  background: rgba(26,29,39,.9);
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
+  padding: 5px 10px; background: rgba(26,29,39,.9);
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
 }
-.nhood-name {
-  font-size: 10px; font-weight: 700;
-  letter-spacing: .06em; text-transform: uppercase; color: var(--dim);
-}
+.nhood-name { font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); }
 .nhood-tally { font-size: 9px; color: var(--demand); font-weight: 600; }
 .nhood-body { flex: 1; position: relative; min-height: 0; }
 .nhood-hint {
@@ -278,29 +294,23 @@ body {
   display: none; position: absolute; inset: 0;
   background: rgba(15,17,23,.65);
   align-items: center; justify-content: center;
-  font-size: 11px; font-weight: 700;
-  letter-spacing: .1em; color: var(--danger);
-  z-index: 10; pointer-events: none;
-  backdrop-filter: blur(1px);
+  font-size: 11px; font-weight: 700; letter-spacing: .1em; color: var(--danger);
+  z-index: 10; pointer-events: none; backdrop-filter: blur(1px);
 }
 .nhood.off .nhood-overlay { display: flex; }
 
-/* ── Substation ─────────────────────────────────────────────────── */
+/* ── Substation ───────────────────────────────────────────────── */
 #substation {
-  position: absolute;
-  background: var(--surface);
-  border: 1.5px solid var(--accent);
-  border-radius: 10px;
+  position: absolute; background: var(--surface);
+  border: 1.5px solid var(--accent); border-radius: 10px;
   box-shadow: 0 0 24px rgba(99,102,241,.2), 0 4px 20px rgba(0,0,0,.6);
   overflow: hidden; z-index: 5;
 }
 .sub-title {
-  padding: 7px 12px;
-  background: rgba(99,102,241,.12);
+  padding: 7px 12px; background: rgba(99,102,241,.12);
   border-bottom: 1px solid rgba(99,102,241,.25);
-  font-size: 10px; font-weight: 800;
-  letter-spacing: .06em; text-transform: uppercase;
-  color: var(--accent); text-align: center;
+  font-size: 10px; font-weight: 800; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--accent); text-align: center;
 }
 .sub-body { padding: 7px; }
 .sub-row {
@@ -308,11 +318,7 @@ body {
   padding: 4px 6px; border-radius: 5px; margin-bottom: 4px;
   background: var(--surface2);
 }
-.sub-row-label {
-  font-size: 10px; font-weight: 600; color: var(--text);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  flex: 1; min-width: 0; margin-right: 6px;
-}
+.sub-row-label { font-size: 10px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; margin-right: 6px; }
 .sub-toggle {
   flex-shrink: 0; width: 34px; height: 18px;
   border-radius: 9px; border: none; cursor: pointer;
@@ -335,7 +341,7 @@ body {
 .sub-stat .val.s { color: var(--supply); }
 .sub-stat .val.d { color: var(--demand); }
 
-/* ── Placed items ───────────────────────────────────────────────── */
+/* ── Placed items ─────────────────────────────────────────────── */
 .placed {
   position: absolute; width: 108px;
   padding: 7px 9px 8px; border-radius: 7px;
@@ -349,19 +355,13 @@ body {
 .placed.demand { border-top: 2px solid var(--demand); }
 .pl-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 4px; }
 .pl-title { font-size: 9px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 3px; }
-.pl-del {
-  border: none; background: transparent; color: var(--dim);
-  cursor: pointer; font-size: 13px; line-height: 1; padding: 0 0 0 3px; flex-shrink: 0;
-}
+.pl-del { border: none; background: transparent; color: var(--dim); cursor: pointer; font-size: 13px; line-height: 1; padding: 0 0 0 3px; flex-shrink: 0; }
 .pl-del:hover { color: var(--danger); }
 .pl-kw { font-size: 13px; font-weight: 800; }
 .placed.supply .pl-kw { color: var(--supply); }
 .placed.demand .pl-kw { color: var(--demand); }
 .placed.offline .pl-kw { opacity: .3; text-decoration: line-through; }
-.pl-off-tag {
-  display: none; font-size: 8px; font-weight: 700;
-  color: var(--danger); letter-spacing: .06em; margin-top: 2px;
-}
+.pl-off-tag { display: none; font-size: 8px; font-weight: 700; color: var(--danger); letter-spacing: .06em; margin-top: 2px; }
 .placed.offline .pl-off-tag { display: block; }
 </style>
 </head>
@@ -373,29 +373,34 @@ body {
     <div class="hstat"><span class="lbl">Supply</span><span class="val sv" id="tot-s">0 kW</span></div>
     <span class="hdiv">|</span>
     <div class="hstat"><span class="lbl">Demand</span><span class="val dv" id="tot-d">0 kW</span></div>
+    <span class="hdiv">|</span>
+    <div id="badge" class="balanced">—</div>
   </div>
-  <div id="badge" class="balanced">—</div>
+  <label id="wiring-label">
+    <input type="checkbox" id="show-wiring"> Show wiring
+  </label>
 </div>
 
 <div id="main">
 
-  <!-- Left panel: gauge + supply palette -->
+  <!-- Left: bar chart + supply palette -->
   <div id="left-panel">
-    <div id="gauge-section">
-      <svg id="gauge" viewBox="0 0 180 96">
-        <path id="g-bg" fill="none" stroke="#1e2235" stroke-width="12" stroke-linecap="round"/>
-        <path id="g-demand-zone" fill="none" stroke-width="12" stroke-linecap="round" stroke="#2a1f10" opacity=".8"/>
-        <path id="g-fill" fill="none" stroke-width="12" stroke-linecap="round"/>
-        <line id="g-dtick" stroke-width="2.5" stroke-linecap="round"/>
-        <text id="g-dlbl" font-size="7.5" font-weight="700" fill="#94a3b8" text-anchor="middle" letter-spacing=".04em"/>
-        <line id="g-needle" stroke-width="2" stroke-linecap="round" x1="90" y1="80"/>
-        <circle cx="90" cy="80" r="4" fill="#e2e8f0"/>
-        <text x="14" y="92" font-size="8" fill="#475569" text-anchor="middle">0</text>
-        <text id="g-max-lbl" x="166" y="92" font-size="8" fill="#475569" text-anchor="middle"/>
-      </svg>
-      <div id="gauge-nums">
-        <span class="gs" id="g-s-lbl">Supply: 0 kW</span>
-        <span class="gd" id="g-d-lbl">Demand: 0 kW</span>
+    <div id="chart-section">
+      <div id="chart-title">Supply vs Demand</div>
+      <div id="sd-chart">
+        <div class="sd-col">
+          <div class="sd-val sv" id="sd-s-val">—</div>
+          <div class="sd-track"><div class="sd-bar supply" id="sd-s-bar" style="height:0%"></div></div>
+          <div class="sd-lbl">Supply</div>
+        </div>
+        <div id="sd-sep">
+          <div id="sd-diff" class="balanced">—</div>
+        </div>
+        <div class="sd-col">
+          <div class="sd-val dv" id="sd-d-val">—</div>
+          <div class="sd-track"><div class="sd-bar demand" id="sd-d-bar" style="height:0%"></div></div>
+          <div class="sd-lbl">Demand</div>
+        </div>
       </div>
     </div>
     <div id="supply-section">
@@ -417,7 +422,7 @@ body {
       <div id="sz-body"><div id="sz-hint">Drop sources here</div></div>
     </div>
 
-    <div class="nhood" id="n-a" data-nid="a">
+    <div class="nhood" id="n-a">
       <div class="nhood-header">
         <span class="nhood-name">Neighborhood A</span>
         <span class="nhood-tally" id="na-d">0 kW</span>
@@ -426,7 +431,7 @@ body {
       <div class="nhood-overlay">DISCONNECTED</div>
     </div>
 
-    <div class="nhood" id="n-b" data-nid="b">
+    <div class="nhood" id="n-b">
       <div class="nhood-header">
         <span class="nhood-name">Neighborhood B</span>
         <span class="nhood-tally" id="nb-d">0 kW</span>
@@ -435,7 +440,7 @@ body {
       <div class="nhood-overlay">DISCONNECTED</div>
     </div>
 
-    <div class="nhood" id="n-c" data-nid="c">
+    <div class="nhood" id="n-c">
       <div class="nhood-header">
         <span class="nhood-name">Neighborhood C</span>
         <span class="nhood-tally" id="nc-d">0 kW</span>
@@ -447,18 +452,9 @@ body {
     <div id="substation">
       <div class="sub-title">⚡ Main Substation</div>
       <div class="sub-body">
-        <div class="sub-row">
-          <span class="sub-row-label">Neighborhood A</span>
-          <button class="sub-toggle on" data-n="a"></button>
-        </div>
-        <div class="sub-row">
-          <span class="sub-row-label">Neighborhood B</span>
-          <button class="sub-toggle on" data-n="b"></button>
-        </div>
-        <div class="sub-row">
-          <span class="sub-row-label">Neighborhood C</span>
-          <button class="sub-toggle on" data-n="c"></button>
-        </div>
+        <div class="sub-row"><span class="sub-row-label">Neighborhood A</span><button class="sub-toggle on" data-n="a"></button></div>
+        <div class="sub-row"><span class="sub-row-label">Neighborhood B</span><button class="sub-toggle on" data-n="b"></button></div>
+        <div class="sub-row"><span class="sub-row-label">Neighborhood C</span><button class="sub-toggle on" data-n="c"></button></div>
         <div class="sub-divider"></div>
         <div class="sub-stats">
           <div class="sub-stat"><span class="lbl">Supply</span><span class="val s" id="sub-s">0 kW</span></div>
@@ -468,74 +464,54 @@ body {
     </div>
   </div>
 
-  <!-- Right panel: demand palette + compact conditions -->
+  <!-- Right: demand palette + conditions -->
   <div id="right-panel">
     <div id="demand-section">
-      <div class="sec-head" style="padding:10px 10px 5px">Demand</div>
-      <div style="padding: 0 10px 10px"><div id="dem-pal"></div></div>
+      <div class="sec-head">Demand</div>
+      <div id="dem-pal"></div>
     </div>
     <div id="cond-section">
-      <div class="sec-head" style="padding:10px 10px 7px">Conditions</div>
-      <div style="padding: 0 10px 10px" id="cond-list"></div>
+      <div class="sec-head">Conditions</div>
+      <div id="cond-list"></div>
     </div>
   </div>
 
 </div>
 
 <script>
-// ─── Definitions ─────────────────────────────────────────────────────────────
+// ─── Data ────────────────────────────────────────────────────────────────────
 
 const SUPPLY = {
   solar:   { label: 'Solar Farm',    icon: '☀️', baseKW: 10,  spec: '10 kW',  tags: ['solar','renewable'] },
-  wind:    { label: 'Wind Farm',     icon: '🌬️', baseKW: 8,   spec: '8 kW',   tags: ['wind','renewable'] },
-  hydro:   { label: 'Hydro Dam',     icon: '💧', baseKW: 15,  spec: '15 kW',  tags: ['hydro'] },
-  gas:     { label: 'Gas Plant',     icon: '🔥', baseKW: 20,  spec: '20 kW',  tags: [] },
-  coal:    { label: 'Coal Plant',    icon: '🏭', baseKW: 25,  spec: '25 kW',  tags: [] },
-  nuclear: { label: 'Nuclear Plant', icon: '⚛️',  baseKW: 50,  spec: '50 kW',  tags: [] },
+  wind:    { label: 'Wind Farm',     icon: '🌬️', baseKW: 8,   spec: '8 kW',   tags: ['wind','renewable']  },
+  hydro:   { label: 'Hydro Dam',     icon: '💧', baseKW: 15,  spec: '15 kW',  tags: ['hydro']             },
+  gas:     { label: 'Gas Plant',     icon: '🔥', baseKW: 20,  spec: '20 kW',  tags: []                    },
+  coal:    { label: 'Coal Plant',    icon: '🏭', baseKW: 25,  spec: '25 kW',  tags: []                    },
+  nuclear: { label: 'Nuclear Plant', icon: '⚛️',  baseKW: 50,  spec: '50 kW',  tags: []                    },
 };
 
 const DEMAND = {
-  house:      { label: 'House',          icon: '🏠', baseKW: 3,    spec: '3 kW'      },
-  hospital:   { label: 'Hospital',       icon: '🏥', baseKW: 2000, spec: '2,000 kW'  },
-  restaurant: { label: 'Restaurant',     icon: '🍽️', baseKW: 50,   spec: '50 kW'     },
-  store:      { label: 'Store',          icon: '🏪', baseKW: 100,  spec: '100 kW'    },
-  police:     { label: 'Police Station', icon: '🚔', baseKW: 500,  spec: '500 kW'    },
-  school:     { label: 'School',         icon: '🏫', baseKW: 300,  spec: '300 kW'    },
-  factory:    { label: 'Factory',        icon: '🏗️', baseKW: 5000, spec: '5,000 kW'  },
+  house:      { label: 'House',          icon: '🏠', baseKW: 3,    spec: '3 kW'     },
+  hospital:   { label: 'Hospital',       icon: '🏥', baseKW: 2000, spec: '2,000 kW' },
+  restaurant: { label: 'Restaurant',     icon: '🍽️', baseKW: 50,   spec: '50 kW'    },
+  store:      { label: 'Store',          icon: '🏪', baseKW: 100,  spec: '100 kW'   },
+  police:     { label: 'Police Station', icon: '🚔', baseKW: 500,  spec: '500 kW'   },
+  school:     { label: 'School',         icon: '🏫', baseKW: 300,  spec: '300 kW'   },
+  factory:    { label: 'Factory',        icon: '🏗️', baseKW: 5000, spec: '5,000 kW' },
 };
 
 const CONDITIONS = [
-  {
-    id: 'winterCrisis', name: 'Winter Crisis', icon: '❄️',
-    supplyMult: 0.60, demandMult: 1.20,
-    tags: [{ cls: 'd-up', label: 'D+20%' }, { cls: 's-down', label: 'S−40%' }],
-  },
-  {
-    id: 'windlessNight', name: 'Windless Night', icon: '🌑',
-    offlineTags: ['wind','solar'],
-    tags: [{ cls: 's-off', label: 'Wind off' }, { cls: 's-off', label: 'Solar off' }],
-  },
-  {
-    id: 'heatwave', name: 'Heatwave', icon: '🌡️',
-    demandMult: 1.35,
-    tags: [{ cls: 'd-up', label: 'D+35%' }],
-  },
-  {
-    id: 'peakHours', name: 'Peak Hours', icon: '⏰',
-    demandMult: 1.15,
-    tags: [{ cls: 'd-up', label: 'D+15%' }],
-  },
-  {
-    id: 'offpeak', name: 'Off-Peak Night', icon: '🌙',
-    demandMult: 0.60,
-    tags: [{ cls: 'd-down', label: 'D−40%' }],
-  },
+  { id:'winterCrisis',  name:'Winter Crisis',   icon:'❄️', supplyMult:.60, demandMult:1.20, tags:[{cls:'d-up',label:'D+20%'},{cls:'s-down',label:'S−40%'}] },
+  { id:'windlessNight', name:'Windless Night',  icon:'🌑', offlineTags:['wind','solar'],    tags:[{cls:'s-off',label:'Wind off'},{cls:'s-off',label:'Solar off'}] },
+  { id:'heatwave',      name:'Heatwave',        icon:'🌡️', demandMult:1.35,                  tags:[{cls:'d-up',label:'D+35%'}] },
+  { id:'peakHours',     name:'Peak Hours',      icon:'⏰', demandMult:1.15,                  tags:[{cls:'d-up',label:'D+15%'}] },
+  { id:'offpeak',       name:'Off-Peak Night',  icon:'🌙', demandMult:.60,                   tags:[{cls:'d-down',label:'D−40%'}] },
 ];
 
 // ─── State ────────────────────────────────────────────────────────────────────
 
 let placed = [];
-let nActive = { a: true, b: true, c: true };
+let nActive = { a:true, b:true, c:true };
 let activeConds = new Set();
 let nextId = 1;
 let movingId = null, moveOX = 0, moveOY = 0, moveZone = null;
@@ -544,95 +520,60 @@ let draggingKind = null;
 // ─── Formatting ───────────────────────────────────────────────────────────────
 
 function fmt(kw) {
-  const neg = kw < 0;
   const s = Math.round(Math.abs(kw)).toLocaleString() + ' kW';
-  return neg ? '−' + s : s;
+  return kw < 0 ? '−' + s : s;
 }
 function fmtShort(kw) {
-  const abs = Math.abs(kw);
-  if (abs >= 1000) return (abs / 1000).toFixed(1) + 'k';
-  return Math.round(abs).toString();
+  const a = Math.abs(kw);
+  return a >= 1000 ? (a/1000).toFixed(1)+'k' : Math.round(a).toString();
 }
 
 // ─── Effective kW ─────────────────────────────────────────────────────────────
 
 function effectiveKW(type, kind) {
   const def = kind === 'supply' ? SUPPLY[type] : DEMAND[type];
-  let sMult = 1, dMult = 1, offline = false;
+  let sM = 1, dM = 1, offline = false;
   for (const id of activeConds) {
     const c = CONDITIONS.find(x => x.id === id);
     if (!c) continue;
-    if (c.offlineTags && kind === 'supply' && c.offlineTags.some(t => def.tags && def.tags.includes(t)))
-      offline = true;
-    if (c.supplyMult !== undefined && kind === 'supply') sMult *= c.supplyMult;
-    if (c.demandMult !== undefined && kind === 'demand') dMult *= c.demandMult;
+    if (c.offlineTags && kind === 'supply' && c.offlineTags.some(t => def.tags?.includes(t))) offline = true;
+    if (c.supplyMult && kind === 'supply') sM *= c.supplyMult;
+    if (c.demandMult && kind === 'demand') dM *= c.demandMult;
   }
   if (offline) return { kw: 0, offline: true };
-  return { kw: def.baseKW * (kind === 'supply' ? sMult : dMult), offline: false };
+  return { kw: def.baseKW * (kind === 'supply' ? sM : dM), offline: false };
 }
 
-// ─── Gauge ────────────────────────────────────────────────────────────────────
+// ─── Bar chart ────────────────────────────────────────────────────────────────
 
-const GCX = 90, GCY = 80, GR = 68;
-
-function gaugePt(f, r) {
-  r = r !== undefined ? r : GR;
-  const t = Math.PI * (1 - Math.max(0, Math.min(1, f)));
-  return { x: GCX + r * Math.cos(t), y: GCY - r * Math.sin(t) };
-}
-
-function gaugeArc(f1, f2) {
-  f1 = Math.max(0, Math.min(1, f1));
-  f2 = Math.max(0, Math.min(1, f2));
-  if (Math.abs(f2 - f1) < 0.001) return '';
-  const p1 = gaugePt(f1), p2 = gaugePt(f2);
-  return `M ${p1.x.toFixed(2)},${p1.y.toFixed(2)} A ${GR},${GR} 0 0,0 ${p2.x.toFixed(2)},${p2.y.toFixed(2)}`;
-}
-
-function updateGauge(totalS, totalD) {
+function updateChart(totalS, totalD) {
   const hasData = totalS > 0 || totalD > 0;
-  const max = hasData ? Math.max(totalS, totalD) * 1.25 : 100;
-  const sf = totalS / max, df = totalD / max;
-  const deficit = totalS < totalD && totalD > 0;
+  const max = hasData ? Math.max(totalS, totalD) * 1.1 : 1;
+  const sp = hasData ? Math.round((totalS / max) * 100) : 0;
+  const dp = hasData ? Math.round((totalD / max) * 100) : 0;
 
-  document.getElementById('g-bg').setAttribute('d', gaugeArc(0, 1));
+  document.getElementById('sd-s-bar').style.height = sp + '%';
+  document.getElementById('sd-d-bar').style.height = dp + '%';
+  document.getElementById('sd-s-val').textContent = hasData ? fmt(totalS) : '—';
+  document.getElementById('sd-d-val').textContent = hasData ? fmt(totalD) : '—';
 
-  const fill = document.getElementById('g-fill');
-  if (totalS > 0) {
-    fill.setAttribute('d', gaugeArc(0, sf));
-    fill.setAttribute('stroke', deficit ? '#ef4444' : '#22c55e');
-    fill.style.opacity = '1';
-  } else { fill.style.opacity = '0'; }
+  const diff = totalS - totalD;
+  const diffEl = document.getElementById('sd-diff');
+  const chartEl = document.getElementById('chart-section');
 
-  const dzone = document.getElementById('g-demand-zone');
-  if (totalD > 0) { dzone.setAttribute('d', gaugeArc(0, df)); dzone.style.opacity = '.5'; }
-  else { dzone.style.opacity = '0'; }
-
-  const dtick = document.getElementById('g-dtick');
-  const dlbl  = document.getElementById('g-dlbl');
-  if (totalD > 0 && df <= 1) {
-    const inner = gaugePt(df, GR - 9), outer = gaugePt(df, GR + 9);
-    dtick.setAttribute('x1', inner.x.toFixed(1)); dtick.setAttribute('y1', inner.y.toFixed(1));
-    dtick.setAttribute('x2', outer.x.toFixed(1)); dtick.setAttribute('y2', outer.y.toFixed(1));
-    dtick.setAttribute('stroke', deficit ? '#f97316' : '#22c55e');
-    dtick.style.opacity = '1';
-    const lp = gaugePt(df, GR + 20);
-    dlbl.setAttribute('x', lp.x.toFixed(1));
-    dlbl.setAttribute('y', (lp.y + 2).toFixed(1));
-    dlbl.textContent = 'DEMAND';
-    dlbl.setAttribute('fill', deficit ? '#f97316' : '#22c55e');
-  } else { dtick.style.opacity = '0'; dlbl.textContent = ''; }
-
-  const needle = document.getElementById('g-needle');
-  const np = gaugePt(sf);
-  needle.setAttribute('x2', np.x.toFixed(2)); needle.setAttribute('y2', np.y.toFixed(2));
-  needle.setAttribute('stroke', deficit ? '#ef4444' : '#e2e8f0');
-
-  document.getElementById('g-max-lbl').textContent = hasData ? fmtShort(max) + ' kW' : '';
-  document.getElementById('gauge').classList.toggle('deficit', deficit);
-
-  document.getElementById('g-s-lbl').textContent = 'Supply: ' + fmt(totalS);
-  document.getElementById('g-d-lbl').textContent = 'Demand: ' + fmt(totalD);
+  if (!hasData) {
+    diffEl.textContent = '—'; diffEl.className = 'balanced';
+    chartEl.classList.remove('deficit');
+  } else if (Math.abs(diff) < 0.5) {
+    diffEl.textContent = '='; diffEl.className = 'balanced';
+    chartEl.classList.remove('deficit');
+  } else if (diff > 0) {
+    diffEl.textContent = '+' + fmtShort(diff); diffEl.className = 'surplus';
+    chartEl.classList.remove('deficit');
+  } else {
+    diffEl.textContent = '−' + fmtShort(Math.abs(diff)); diffEl.className = 'deficit';
+    chartEl.classList.add('deficit');
+  }
 }
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
@@ -642,9 +583,7 @@ function renderPalette() {
     const el = document.createElement('div');
     el.className = 'pal-item ' + kind;
     el.draggable = true;
-    el.dataset.type = type; el.dataset.kind = kind;
-    el.innerHTML = `<span class="p-icon">${def.icon}</span>
-      <div><div class="p-name">${def.label}</div><div class="p-spec">${def.spec}</div></div>`;
+    el.innerHTML = `<span class="p-icon">${def.icon}</span><div><div class="p-name">${def.label}</div><div class="p-spec">${def.spec}</div></div>`;
     el.addEventListener('dragstart', e => {
       draggingKind = kind;
       e.dataTransfer.effectAllowed = 'copy';
@@ -652,14 +591,13 @@ function renderPalette() {
     });
     return el;
   }
-  const sp = document.getElementById('sup-pal');
-  const dp = document.getElementById('dem-pal');
-  sp.innerHTML = ''; dp.innerHTML = '';
-  for (const [t,d] of Object.entries(SUPPLY)) sp.appendChild(make(t, d, 'supply'));
-  for (const [t,d] of Object.entries(DEMAND))  dp.appendChild(make(t, d, 'demand'));
+  document.getElementById('sup-pal').innerHTML = '';
+  document.getElementById('dem-pal').innerHTML = '';
+  for (const [t,d] of Object.entries(SUPPLY)) document.getElementById('sup-pal').appendChild(make(t, d, 'supply'));
+  for (const [t,d] of Object.entries(DEMAND))  document.getElementById('dem-pal').appendChild(make(t, d, 'demand'));
 }
 
-// ─── Conditions (compact) ─────────────────────────────────────────────────────
+// ─── Conditions ───────────────────────────────────────────────────────────────
 
 function renderConditions() {
   const list = document.getElementById('cond-list');
@@ -670,16 +608,12 @@ function renderConditions() {
     el.className = 'cond-row' + (on ? ' on' : '');
     el.innerHTML = `
       <div class="cr-left">
-        <div class="cr-chk">
-          <svg width="7" height="7" viewBox="0 0 7 7" fill="none">
-            <polyline points="1,3.5 2.8,5.5 6,1.5" stroke="white" stroke-width="1.5"
-              stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
+        <div class="cr-chk"><svg width="7" height="7" viewBox="0 0 7 7" fill="none">
+          <polyline points="1,3.5 2.8,5.5 6,1.5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg></div>
         <span class="cr-name">${c.icon} ${c.name}</span>
       </div>
-      <div class="cr-tags">${c.tags.map(t => `<span class="tag ${t.cls}">${t.label}</span>`).join('')}</div>
-    `;
+      <div class="cr-tags">${c.tags.map(t=>`<span class="tag ${t.cls}">${t.label}</span>`).join('')}</div>`;
     el.addEventListener('click', () => {
       activeConds.has(c.id) ? activeConds.delete(c.id) : activeConds.add(c.id);
       renderConditions(); updateBalance();
@@ -688,51 +622,56 @@ function renderConditions() {
   }
 }
 
-// ─── Layout ───────────────────────────────────────────────────────────────────
+// ─── Layout & lines ───────────────────────────────────────────────────────────
 
 function layoutWorkspace() {
   const ws = document.getElementById('workspace');
   const W = ws.offsetWidth, H = ws.offsetHeight;
 
   const sz = document.getElementById('supply-zone');
-  sz.style.left = (W * 0.01) + 'px'; sz.style.top = (H * 0.05) + 'px';
-  sz.style.width = (W * 0.25) + 'px'; sz.style.height = (H * 0.88) + 'px';
+  sz.style.left = W*.01+'px'; sz.style.top = H*.05+'px';
+  sz.style.width = W*.25+'px'; sz.style.height = H*.88+'px';
 
-  const gap = H * 0.02, nh = (H * 0.9 - gap * 2) / 3;
-  const nl = W * 0.58, nw = W * 0.40, nt = H * 0.05;
+  const gap = H*.02, nh = (H*.9 - gap*2) / 3;
+  const nl = W*.58, nw = W*.40, nt = H*.05;
   ['a','b','c'].forEach((nid, i) => {
-    const el = document.getElementById('n-' + nid);
-    el.style.left = nl + 'px'; el.style.top = (nt + i * (nh + gap)) + 'px';
-    el.style.width = nw + 'px'; el.style.height = nh + 'px';
+    const el = document.getElementById('n-'+nid);
+    el.style.left = nl+'px'; el.style.top = (nt + i*(nh+gap))+'px';
+    el.style.width = nw+'px'; el.style.height = nh+'px';
   });
 
   const sub = document.getElementById('substation');
   sub.style.width = '156px';
-  sub.style.left = (W * 0.30) + 'px';
-  sub.style.top  = (H * 0.5 - (sub.offsetHeight || 160) / 2) + 'px';
+  sub.style.left = W*.30+'px';
+  sub.style.top  = (H*.5 - (sub.offsetHeight||160)/2)+'px';
 
   drawLines();
 }
 
 function drawLines() {
-  const ws = document.getElementById('workspace');
+  const ws  = document.getElementById('workspace');
   const svg = document.getElementById('lines');
   const wsR = ws.getBoundingClientRect();
-  function midEdge(el, side) {
+
+  function me(el, side) {
     const r = el.getBoundingClientRect();
     const x = r.left - wsR.left, y = r.top - wsR.top;
-    if (side === 'left')  return { x, y: y + r.height / 2 };
-    if (side === 'right') return { x: x + r.width, y: y + r.height / 2 };
+    return side === 'left'  ? { x,           y: y + r.height/2 }
+         : side === 'right' ? { x: x+r.width, y: y + r.height/2 }
+         : null;
   }
+
   const sub = document.getElementById('substation');
   const sz  = document.getElementById('supply-zone');
+  const sL = me(sub,'left'), sR = me(sub,'right'), szR = me(sz,'right');
+  const aL = me(document.getElementById('n-a'),'left');
+  const bL = me(document.getElementById('n-b'),'left');
+  const cL = me(document.getElementById('n-c'),'left');
+
   function ln(p1, p2, cls) {
     return `<line class="conn-line ${cls}" x1="${p1.x.toFixed(1)}" y1="${p1.y.toFixed(1)}" x2="${p2.x.toFixed(1)}" y2="${p2.y.toFixed(1)}"/>`;
   }
-  const sL = midEdge(sub,'left'), sR = midEdge(sub,'right'), szR = midEdge(sz,'right');
-  const aL = midEdge(document.getElementById('n-a'),'left');
-  const bL = midEdge(document.getElementById('n-b'),'left');
-  const cL = midEdge(document.getElementById('n-c'),'left');
+
   svg.innerHTML =
     ln(szR, sL, 'supply-line') +
     ln(sR, aL, nActive.a ? 'active' : 'off') +
@@ -740,50 +679,48 @@ function drawLines() {
     ln(sR, cL, nActive.c ? 'active' : 'off');
 }
 
+// ─── Wiring toggle ────────────────────────────────────────────────────────────
+
+document.getElementById('show-wiring').addEventListener('change', e => {
+  document.getElementById('lines').classList.toggle('show', e.target.checked);
+});
+
 // ─── Drop zones ───────────────────────────────────────────────────────────────
 
 const szEl = document.getElementById('supply-zone');
 szEl.addEventListener('dragover', e => {
   if (draggingKind !== 'supply') return;
-  e.preventDefault(); e.dataTransfer.dropEffect = 'copy';
-  szEl.classList.add('dragover');
+  e.preventDefault(); szEl.classList.add('dragover');
 });
-szEl.addEventListener('dragleave', e => {
-  if (!szEl.contains(e.relatedTarget)) szEl.classList.remove('dragover');
-});
+szEl.addEventListener('dragleave', e => { if (!szEl.contains(e.relatedTarget)) szEl.classList.remove('dragover'); });
 szEl.addEventListener('drop', e => {
   e.preventDefault(); szEl.classList.remove('dragover');
-  let data; try { data = JSON.parse(e.dataTransfer.getData('application/json')); } catch { return; }
-  if (data.kind !== 'supply') return;
-  const body = document.getElementById('sz-body');
-  const br = body.getBoundingClientRect();
-  addPlaced(data.type, 'supply', 'supply', e.clientX - br.left - 54, e.clientY - br.top - 24);
+  let d; try { d = JSON.parse(e.dataTransfer.getData('application/json')); } catch { return; }
+  if (d.kind !== 'supply') return;
+  const br = document.getElementById('sz-body').getBoundingClientRect();
+  addPlaced(d.type, 'supply', 'supply', e.clientX-br.left-54, e.clientY-br.top-24);
 });
 
 ['a','b','c'].forEach(nid => {
-  const el = document.getElementById('n-' + nid);
+  const el = document.getElementById('n-'+nid);
   el.addEventListener('dragover', e => {
     if (draggingKind !== 'demand') return;
-    e.preventDefault(); e.dataTransfer.dropEffect = 'copy';
-    el.classList.add('nhood-dragover');
+    e.preventDefault(); el.classList.add('nhood-dragover');
   });
-  el.addEventListener('dragleave', e => {
-    if (!el.contains(e.relatedTarget)) el.classList.remove('nhood-dragover');
-  });
+  el.addEventListener('dragleave', e => { if (!el.contains(e.relatedTarget)) el.classList.remove('nhood-dragover'); });
   el.addEventListener('drop', e => {
     e.preventDefault(); el.classList.remove('nhood-dragover');
-    let data; try { data = JSON.parse(e.dataTransfer.getData('application/json')); } catch { return; }
-    if (data.kind !== 'demand') return;
-    const body = document.getElementById('nb-' + nid);
-    const br = body.getBoundingClientRect();
-    addPlaced(data.type, 'demand', nid, e.clientX - br.left - 54, e.clientY - br.top - 24);
+    let d; try { d = JSON.parse(e.dataTransfer.getData('application/json')); } catch { return; }
+    if (d.kind !== 'demand') return;
+    const br = document.getElementById('nb-'+nid).getBoundingClientRect();
+    addPlaced(d.type, 'demand', nid, e.clientX-br.left-54, e.clientY-br.top-24);
   });
 });
 
 // ─── Placed items ─────────────────────────────────────────────────────────────
 
 function getContainer(zone) {
-  return document.getElementById(zone === 'supply' ? 'sz-body' : 'nb-' + zone);
+  return document.getElementById(zone === 'supply' ? 'sz-body' : 'nb-'+zone);
 }
 
 function addPlaced(type, kind, zone, x, y) {
@@ -793,17 +730,10 @@ function addPlaced(type, kind, zone, x, y) {
   const { kw, offline } = effectiveKW(type, kind);
   const body = getContainer(zone);
   const el = document.createElement('div');
-  el.id = 'pi-' + id;
-  el.className = 'placed ' + kind + (offline ? ' offline' : '');
-  el.style.left = Math.max(4, x) + 'px'; el.style.top = Math.max(4, y) + 'px';
-  el.innerHTML = `
-    <div class="pl-head">
-      <div class="pl-title">${def.icon} ${def.label}</div>
-      <button class="pl-del">×</button>
-    </div>
-    <div class="pl-kw">${fmt(kw)}</div>
-    <div class="pl-off-tag">OFFLINE</div>
-  `;
+  el.id = 'pi-'+id;
+  el.className = 'placed '+kind+(offline?' offline':'');
+  el.style.left = Math.max(4,x)+'px'; el.style.top = Math.max(4,y)+'px';
+  el.innerHTML = `<div class="pl-head"><div class="pl-title">${def.icon} ${def.label}</div><button class="pl-del">×</button></div><div class="pl-kw">${fmt(kw)}</div><div class="pl-off-tag">OFFLINE</div>`;
   el.querySelector('.pl-del').addEventListener('click', e => { e.stopPropagation(); removePlaced(id); });
   el.addEventListener('mousedown', onItemMouseDown);
   body.appendChild(el);
@@ -816,9 +746,9 @@ function removePlaced(id) {
   const item = placed.find(i => i.id === id);
   if (!item) return;
   placed = placed.filter(i => i.id !== id);
-  document.getElementById('pi-' + id)?.remove();
+  document.getElementById('pi-'+id)?.remove();
   const body = getContainer(item.zone);
-  if (body && placed.filter(p => p.zone === item.zone).length === 0) {
+  if (body && !placed.some(p => p.zone === item.zone)) {
     const hint = body.querySelector('#sz-hint, .nhood-hint');
     if (hint) hint.style.opacity = '1';
   }
@@ -831,31 +761,30 @@ function onItemMouseDown(e) {
   if (e.target.classList.contains('pl-del')) return;
   e.preventDefault();
   const el = e.currentTarget;
-  const id = parseInt(el.id.replace('pi-', ''));
+  const id = parseInt(el.id.replace('pi-',''));
   const item = placed.find(i => i.id === id);
   if (!item) return;
-  const rect = el.getBoundingClientRect();
+  const r = el.getBoundingClientRect();
   movingId = id; moveZone = item.zone;
-  moveOX = e.clientX - rect.left; moveOY = e.clientY - rect.top;
+  moveOX = e.clientX-r.left; moveOY = e.clientY-r.top;
   el.style.zIndex = 20; el.style.boxShadow = '0 8px 28px rgba(0,0,0,.8)';
 }
 
 document.addEventListener('mousemove', e => {
   if (movingId === null) return;
-  const el = document.getElementById('pi-' + movingId);
+  const el = document.getElementById('pi-'+movingId);
   if (!el) return;
-  const body = getContainer(moveZone);
-  const br = body.getBoundingClientRect();
-  const x = Math.max(0, Math.min(e.clientX - br.left - moveOX, br.width  - el.offsetWidth));
-  const y = Math.max(0, Math.min(e.clientY - br.top  - moveOY, br.height - el.offsetHeight));
-  el.style.left = x + 'px'; el.style.top = y + 'px';
+  const br = getContainer(moveZone).getBoundingClientRect();
+  const x = Math.max(0, Math.min(e.clientX-br.left-moveOX, br.width -el.offsetWidth));
+  const y = Math.max(0, Math.min(e.clientY-br.top -moveOY, br.height-el.offsetHeight));
+  el.style.left = x+'px'; el.style.top = y+'px';
   const item = placed.find(i => i.id === movingId);
   if (item) { item.x = x; item.y = y; }
 });
 
 document.addEventListener('mouseup', () => {
   if (movingId === null) return;
-  const el = document.getElementById('pi-' + movingId);
+  const el = document.getElementById('pi-'+movingId);
   if (el) { el.style.zIndex = ''; el.style.boxShadow = ''; }
   movingId = null; moveZone = null;
 });
@@ -866,9 +795,9 @@ document.querySelectorAll('.sub-toggle').forEach(btn => {
   btn.addEventListener('click', () => {
     const nid = btn.dataset.n;
     nActive[nid] = !nActive[nid];
-    btn.className = 'sub-toggle ' + (nActive[nid] ? 'on' : 'off');
-    document.getElementById('n-' + nid).classList.toggle('active', nActive[nid]);
-    document.getElementById('n-' + nid).classList.toggle('off', !nActive[nid]);
+    btn.className = 'sub-toggle '+(nActive[nid]?'on':'off');
+    document.getElementById('n-'+nid).classList.toggle('active',  nActive[nid]);
+    document.getElementById('n-'+nid).classList.toggle('off',    !nActive[nid]);
     drawLines(); updateBalance();
   });
 });
@@ -877,21 +806,20 @@ document.querySelectorAll('.sub-toggle').forEach(btn => {
 
 function updateBalance() {
   let totalS = 0;
-  const nDemand = { a: 0, b: 0, c: 0 };
+  const nDemand = { a:0, b:0, c:0 };
 
   for (const item of placed) {
     const { kw, offline } = effectiveKW(item.type, item.kind);
-    const el = document.getElementById('pi-' + item.id);
+    const el = document.getElementById('pi-'+item.id);
     if (el) { el.querySelector('.pl-kw').textContent = fmt(kw); el.classList.toggle('offline', offline); }
     if (item.kind === 'supply') totalS += kw;
-    else nDemand[item.zone] = (nDemand[item.zone] || 0) + kw;
+    else nDemand[item.zone] = (nDemand[item.zone]||0) + kw;
   }
 
   document.getElementById('sz-total').textContent = fmt(totalS);
-  for (const nid of ['a','b','c']) {
-    const pfx = { a:'na', b:'nb', c:'nc' }[nid];
-    document.getElementById(pfx + '-d').textContent = fmt(nDemand[nid]);
-  }
+  ['a','b','c'].forEach(nid => {
+    document.getElementById({a:'na',b:'nb',c:'nc'}[nid]+'-d').textContent = fmt(nDemand[nid]);
+  });
 
   let totalD = 0;
   for (const nid of ['a','b','c']) { if (nActive[nid]) totalD += nDemand[nid]; }
@@ -901,21 +829,21 @@ function updateBalance() {
   document.getElementById('sub-s').textContent = fmt(totalS);
   document.getElementById('sub-d').textContent = fmt(totalD);
 
-  const badge = document.getElementById('badge');
   const diff = totalS - totalD;
-  if (totalS === 0 && totalD === 0)   { badge.textContent = '—';                      badge.className = 'balanced'; }
-  else if (Math.abs(diff) < 0.5)      { badge.textContent = 'Balanced';               badge.className = 'balanced'; }
-  else if (diff > 0)                  { badge.textContent = '+' + fmt(diff) + ' surplus'; badge.className = 'surplus'; }
-  else                                { badge.textContent = fmt(Math.abs(diff)) + ' deficit'; badge.className = 'deficit'; }
+  const badge = document.getElementById('badge');
+  if (totalS === 0 && totalD === 0)  { badge.textContent = '—';                           badge.className = 'balanced'; }
+  else if (Math.abs(diff) < 0.5)     { badge.textContent = 'Balanced';                    badge.className = 'balanced'; }
+  else if (diff > 0)                 { badge.textContent = '+'+fmt(diff)+' surplus';       badge.className = 'surplus';  }
+  else                               { badge.textContent = fmt(Math.abs(diff))+' deficit'; badge.className = 'deficit';  }
 
-  updateGauge(totalS, totalD);
+  updateChart(totalS, totalD);
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
 renderPalette();
 renderConditions();
-for (const nid of ['a','b','c']) document.getElementById('n-' + nid).classList.add('active');
+['a','b','c'].forEach(nid => document.getElementById('n-'+nid).classList.add('active'));
 requestAnimationFrame(() => { layoutWorkspace(); updateBalance(); });
 window.addEventListener('resize', layoutWorkspace);
 </script>
