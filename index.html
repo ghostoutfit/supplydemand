@@ -37,13 +37,12 @@ body {
   padding: 0 18px;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 0;
   flex-shrink: 0;
   height: 46px;
 }
-#header h1 { font-size: 13px; font-weight: 700; white-space: nowrap; }
 
-#hbal { flex: 1; display: flex; align-items: center; justify-content: center; gap: 12px; }
+#hbal { display: flex; align-items: center; gap: 10px; flex-shrink: 0; padding-right: 16px; border-right: 1px solid var(--border); }
 .hstat { display: flex; align-items: center; gap: 5px; font-size: 11px; }
 .hstat .lbl { color: var(--dim); }
 .hstat .val { font-weight: 800; font-size: 14px; font-variant-numeric: tabular-nums; }
@@ -59,15 +58,69 @@ body {
 #badge.deficit  { background: rgba(239,68,68,.13);  color: var(--danger); }
 #badge.balanced { background: rgba(99,102,241,.13); color: var(--accent); }
 
+/* Scenario tabs */
+#scenario-tabs {
+  flex: 1; display: flex; align-items: center;
+  gap: 6px; padding: 0 14px;
+}
+.sc-tabs-lbl {
+  font-size: 9px; font-weight: 800; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--dim);
+  white-space: nowrap; margin-right: 4px;
+}
+.sc-tab {
+  padding: 5px 13px; border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--dim); font-size: 11px; font-weight: 600;
+  cursor: pointer; white-space: nowrap;
+  transition: border-color .15s, color .15s, background .15s;
+  font-family: inherit;
+}
+.sc-tab:hover { border-color: var(--accent); color: var(--text); }
+.sc-tab.active {
+  border-color: var(--accent);
+  background: rgba(99,102,241,.14);
+  color: var(--text);
+  box-shadow: 0 0 0 1px rgba(99,102,241,.2);
+}
+
 /* Wiring toggle */
 #wiring-label {
   display: flex; align-items: center; gap: 6px;
   font-size: 11px; color: var(--dim);
   cursor: pointer; user-select: none;
-  white-space: nowrap;
+  white-space: nowrap; flex-shrink: 0;
+  padding-left: 16px; border-left: 1px solid var(--border);
 }
 #wiring-label input { accent-color: var(--accent); cursor: pointer; }
 #wiring-label:hover { color: var(--text); }
+
+/* Scenario banner */
+#sc-banner {
+  display: none; align-items: center; gap: 10px;
+  background: rgba(99,102,241,.08);
+  border-bottom: 1px solid rgba(99,102,241,.2);
+  padding: 6px 18px; flex-shrink: 0;
+}
+#sc-goal {
+  flex: 1; font-size: 11px; color: #a5b4fc; font-style: italic;
+}
+#sc-exit {
+  font-size: 10px; font-weight: 700; padding: 3px 10px;
+  border-radius: 5px; border: 1px solid rgba(99,102,241,.3);
+  background: transparent; color: var(--dim);
+  cursor: pointer; font-family: inherit;
+  transition: color .15s, border-color .15s;
+  flex-shrink: 0;
+}
+#sc-exit:hover { color: var(--text); border-color: var(--accent); }
+
+/* Locked palette in scenario mode */
+.pal-locked .pal-item {
+  opacity: .35; cursor: not-allowed; pointer-events: none;
+}
+.pal-locked .sec-note::after { content: ' (scenario locked)'; }
 
 /* ── Main ─────────────────────────────────────────────────────── */
 #main { display: flex; flex: 1; overflow: hidden; }
@@ -231,13 +284,20 @@ body {
 }
 #lines.show { opacity: 1; }
 
-.conn-line {
-  fill: none; stroke-width: 3;
-  stroke-linecap: round;
-}
-.conn-line.supply-line { stroke: #4ade80; }
-.conn-line.active      { stroke: #818cf8; }
-.conn-line.off         { stroke: #475569; stroke-dasharray: 5 5; stroke-width: 2; }
+/* ── Circuit wiring ───────────────────────────────────────────── */
+.wr { fill: none; stroke-width: 2; stroke-linecap: round; }
+.wr.hot    { stroke: #fb923c; }
+.wr.gnd    { stroke: #3b82f6; }
+.wr.active { stroke: #818cf8; }
+.wr.gnd-d  { stroke: #3b82f6; opacity: .45; }   /* demand GND when off */
+.wr.off    { stroke: #2d3748; stroke-dasharray: 6 4; }
+
+.sw-dot        { fill: #94a3b8; }
+.sw-dot.sw-on  { fill: #818cf8; }
+.sw-dot.sw-off { fill: #2d3748; }
+.sw-arm        { fill: none; stroke-width: 2; stroke-linecap: round; }
+.sw-arm.sw-on  { stroke: #818cf8; }
+.sw-arm.sw-off { stroke: #2d3748; }
 
 /* ── Supply zone ──────────────────────────────────────────────── */
 #supply-zone {
@@ -368,17 +428,26 @@ body {
 <body>
 
 <div id="header">
-  <h1>⚡ Energy Grid</h1>
   <div id="hbal">
-    <div class="hstat"><span class="lbl">Supply</span><span class="val sv" id="tot-s">0 kW</span></div>
+    <div class="hstat"><span class="lbl">Supply</span><span class="val sv" id="tot-s">0</span></div>
     <span class="hdiv">|</span>
-    <div class="hstat"><span class="lbl">Demand</span><span class="val dv" id="tot-d">0 kW</span></div>
+    <div class="hstat"><span class="lbl">Demand</span><span class="val dv" id="tot-d">0</span></div>
     <span class="hdiv">|</span>
     <div id="badge" class="balanced">—</div>
+  </div>
+  <div id="scenario-tabs">
+    <span class="sc-tabs-lbl">Scenarios:</span>
+    <button class="sc-tab" data-sc="solar">☀️ Solar Day</button>
+    <button class="sc-tab" data-sc="winter">❄️ Winter Crisis</button>
+    <button class="sc-tab" data-sc="night">🌑 Night Grid</button>
   </div>
   <label id="wiring-label">
     <input type="checkbox" id="show-wiring"> Show wiring
   </label>
+</div>
+<div id="sc-banner">
+  <span id="sc-goal"></span>
+  <button id="sc-exit">✕ Free Play</button>
 </div>
 
 <div id="main">
@@ -417,7 +486,7 @@ body {
     <div id="supply-zone">
       <div id="sz-header">
         <span id="sz-title">Power Sources</span>
-        <span id="sz-total">0 kW</span>
+        <span id="sz-total">0</span>
       </div>
       <div id="sz-body"><div id="sz-hint">Drop sources here</div></div>
     </div>
@@ -425,7 +494,7 @@ body {
     <div class="nhood" id="n-a">
       <div class="nhood-header">
         <span class="nhood-name">Neighborhood A</span>
-        <span class="nhood-tally" id="na-d">0 kW</span>
+        <span class="nhood-tally" id="na-d">0</span>
       </div>
       <div class="nhood-body" id="nb-a"><div class="nhood-hint">Drop demand items here</div></div>
       <div class="nhood-overlay">DISCONNECTED</div>
@@ -434,7 +503,7 @@ body {
     <div class="nhood" id="n-b">
       <div class="nhood-header">
         <span class="nhood-name">Neighborhood B</span>
-        <span class="nhood-tally" id="nb-d">0 kW</span>
+        <span class="nhood-tally" id="nb-d">0</span>
       </div>
       <div class="nhood-body" id="nb-b"><div class="nhood-hint">Drop demand items here</div></div>
       <div class="nhood-overlay">DISCONNECTED</div>
@@ -443,7 +512,7 @@ body {
     <div class="nhood" id="n-c">
       <div class="nhood-header">
         <span class="nhood-name">Neighborhood C</span>
-        <span class="nhood-tally" id="nc-d">0 kW</span>
+        <span class="nhood-tally" id="nc-d">0</span>
       </div>
       <div class="nhood-body" id="nb-c"><div class="nhood-hint">Drop demand items here</div></div>
       <div class="nhood-overlay">DISCONNECTED</div>
@@ -457,8 +526,8 @@ body {
         <div class="sub-row"><span class="sub-row-label">Neighborhood C</span><button class="sub-toggle on" data-n="c"></button></div>
         <div class="sub-divider"></div>
         <div class="sub-stats">
-          <div class="sub-stat"><span class="lbl">Supply</span><span class="val s" id="sub-s">0 kW</span></div>
-          <div class="sub-stat"><span class="lbl">Demand</span><span class="val d" id="sub-d">0 kW</span></div>
+          <div class="sub-stat"><span class="lbl">Supply</span><span class="val s" id="sub-s">0</span></div>
+          <div class="sub-stat"><span class="lbl">Demand</span><span class="val d" id="sub-d">0</span></div>
         </div>
       </div>
     </div>
@@ -482,22 +551,23 @@ body {
 // ─── Data ────────────────────────────────────────────────────────────────────
 
 const SUPPLY = {
-  solar:   { label: 'Solar Farm',    icon: '☀️', baseKW: 10,  spec: '10 kW',  tags: ['solar','renewable'] },
-  wind:    { label: 'Wind Farm',     icon: '🌬️', baseKW: 8,   spec: '8 kW',   tags: ['wind','renewable']  },
-  hydro:   { label: 'Hydro Dam',     icon: '💧', baseKW: 15,  spec: '15 kW',  tags: ['hydro']             },
-  gas:     { label: 'Gas Plant',     icon: '🔥', baseKW: 20,  spec: '20 kW',  tags: []                    },
-  coal:    { label: 'Coal Plant',    icon: '🏭', baseKW: 25,  spec: '25 kW',  tags: []                    },
-  nuclear: { label: 'Nuclear Plant', icon: '⚛️',  baseKW: 50,  spec: '50 kW',  tags: []                    },
+  solar:   { label: 'Solar Array',   icon: '☀️', baseKW: 2,   spec: '2',   tags: ['solar','renewable'] },
+  wind:    { label: 'Wind Farm',     icon: '🌬️', baseKW: 8,   spec: '8',   tags: ['wind','renewable']  },
+  hydro:   { label: 'Hydro Dam',     icon: '💧', baseKW: 15,  spec: '15',  tags: ['hydro']             },
+  gas:     { label: 'Gas Plant',     icon: '🔥', baseKW: 20,  spec: '20',  tags: []                    },
+  coal:    { label: 'Coal Plant',    icon: '🏭', baseKW: 25,  spec: '25',  tags: []                    },
+  nuclear: { label: 'Nuclear Plant', icon: '⚛️',  baseKW: 50,  spec: '50',  tags: []                    },
 };
 
 const DEMAND = {
-  house:      { label: 'House',          icon: '🏠', baseKW: 3,    spec: '3 kW'     },
-  hospital:   { label: 'Hospital',       icon: '🏥', baseKW: 2000, spec: '2,000 kW' },
-  restaurant: { label: 'Restaurant',     icon: '🍽️', baseKW: 50,   spec: '50 kW'    },
-  store:      { label: 'Store',          icon: '🏪', baseKW: 100,  spec: '100 kW'   },
-  police:     { label: 'Police Station', icon: '🚔', baseKW: 500,  spec: '500 kW'   },
-  school:     { label: 'School',         icon: '🏫', baseKW: 300,  spec: '300 kW'   },
-  factory:    { label: 'Factory',        icon: '🏗️', baseKW: 5000, spec: '5,000 kW' },
+  house:      { label: 'House',          icon: '🏠', baseKW: 3,   spec: '3'  },
+  hospital:   { label: 'Hospital',       icon: '🏥', baseKW: 20,  spec: '20' },
+  restaurant: { label: 'Restaurant',     icon: '🍽️', baseKW: 5,   spec: '5'  },
+  store:      { label: 'Store',          icon: '🏪', baseKW: 5,   spec: '5'  },
+  police:     { label: 'Police Station', icon: '🚔', baseKW: 10,  spec: '10' },
+  school:     { label: 'School',         icon: '🏫', baseKW: 10,  spec: '10' },
+  factory:    { label: 'Factory',        icon: '🏗️', baseKW: 40,  spec: '40' },
+  apartment:  { label: 'Apartment',      icon: '🏢', baseKW: 10,  spec: '10' },
 };
 
 const CONDITIONS = [
@@ -508,6 +578,58 @@ const CONDITIONS = [
   { id:'offpeak',       name:'Off-Peak Night',  icon:'🌙', demandMult:.60,                   tags:[{cls:'d-down',label:'D−40%'}] },
 ];
 
+// ─── Scenarios ────────────────────────────────────────────────────────────────
+
+const SCENARIOS = {
+  solar: {
+    name: '☀️ Solar Day',
+    goal: 'Solar and wind are your only sources today — 38 units total. Neighborhood B (commercial) and C (school) each need far more than you have. Disconnect the ones you can\'t sustain and keep Neighborhood A\'s residents powered.',
+    conditions: [],
+    supply: [
+      { type:'solar', x:10, y:14  },
+      { type:'solar', x:10, y:115 },
+      { type:'solar', x:10, y:216 },
+      { type:'wind',  x:10, y:317 },
+    ],
+    demand: {
+      a: [{ type:'house', x:8, y:10 }, { type:'house', x:8, y:90 }, { type:'house', x:8, y:170 }],
+      b: [{ type:'restaurant', x:8, y:10 }, { type:'store', x:8, y:90 }],
+      c: [{ type:'school', x:8, y:10 }],
+    },
+  },
+  winter: {
+    name: '❄️ Winter Crisis',
+    goal: 'A winter storm has cut supply 40% and spiked demand 20%. Gas, coal, and nuclear are all you have. Neighborhoods A (hospital) and B (police + school) will overwhelm the grid — can you at least keep the residents in C warm?',
+    conditions: ['winterCrisis'],
+    supply: [
+      { type:'gas',     x:10, y:14  },
+      { type:'coal',    x:10, y:115 },
+      { type:'nuclear', x:10, y:216 },
+    ],
+    demand: {
+      a: [{ type:'hospital', x:8, y:10 }],
+      b: [{ type:'police', x:8, y:10 }, { type:'school', x:8, y:90 }],
+      c: [{ type:'house', x:8, y:10 }, { type:'house', x:8, y:90 }, { type:'house', x:8, y:170 }],
+    },
+  },
+  night: {
+    name: '🌑 Night Grid',
+    goal: 'Windless night — solar and wind are completely offline. Only hydro (15) and gas (20) remain. The factory in C will never be powered. Figure out what you can actually run.',
+    conditions: ['windlessNight'],
+    supply: [
+      { type:'solar', x:10, y:14  },
+      { type:'wind',  x:10, y:115 },
+      { type:'hydro', x:10, y:216 },
+      { type:'gas',   x:10, y:317 },
+    ],
+    demand: {
+      a: [{ type:'house', x:8, y:10 }, { type:'house', x:8, y:90 }, { type:'house', x:8, y:170 }],
+      b: [{ type:'restaurant', x:8, y:10 }, { type:'store', x:8, y:90 }],
+      c: [{ type:'factory', x:8, y:10 }],
+    },
+  },
+};
+
 // ─── State ────────────────────────────────────────────────────────────────────
 
 let placed = [];
@@ -516,11 +638,13 @@ let activeConds = new Set();
 let nextId = 1;
 let movingId = null, moveOX = 0, moveOY = 0, moveZone = null;
 let draggingKind = null;
+let draggingType = null;
+let currentScenario = null;
 
 // ─── Formatting ───────────────────────────────────────────────────────────────
 
 function fmt(kw) {
-  const s = Math.round(Math.abs(kw)).toLocaleString() + ' kW';
+  const s = Math.round(Math.abs(kw)).toLocaleString();
   return kw < 0 ? '−' + s : s;
 }
 function fmtShort(kw) {
@@ -585,7 +709,9 @@ function renderPalette() {
     el.draggable = true;
     el.innerHTML = `<span class="p-icon">${def.icon}</span><div><div class="p-name">${def.label}</div><div class="p-spec">${def.spec}</div></div>`;
     el.addEventListener('dragstart', e => {
+      if (currentScenario) { e.preventDefault(); return; }
       draggingKind = kind;
+      draggingType = type;
       e.dataTransfer.effectAllowed = 'copy';
       e.dataTransfer.setData('application/json', JSON.stringify({ type, kind }));
     });
@@ -652,31 +778,136 @@ function drawLines() {
   const ws  = document.getElementById('workspace');
   const svg = document.getElementById('lines');
   const wsR = ws.getBoundingClientRect();
+  const W   = ws.offsetWidth, H = ws.offsetHeight;
+  if (!W || !H) return;
 
-  function me(el, side) {
-    const r = el.getBoundingClientRect();
-    const x = r.left - wsR.left, y = r.top - wsR.top;
-    return side === 'left'  ? { x,           y: y + r.height/2 }
-         : side === 'right' ? { x: x+r.width, y: y + r.height/2 }
-         : null;
+  // HOT and GND rails right next to each other at the top
+  const hotY = 10;
+  const gndY = 20;
+
+  function gr(id) {
+    const el = document.getElementById(id);
+    if (!el) return null;
+    const b = el.getBoundingClientRect();
+    return {
+      top:    b.top    - wsR.top,
+      bottom: b.bottom - wsR.top,
+      left:   b.left   - wsR.left,
+      right:  b.right  - wsR.left,
+      cx:     b.left - wsR.left + b.width  / 2,
+      cy:     b.top  - wsR.top  + b.height / 2,
+    };
+  }
+  function elR(el) {
+    if (!el) return null;
+    const b = el.getBoundingClientRect();
+    return {
+      top:    b.top    - wsR.top,
+      bottom: b.bottom - wsR.top,
+      left:   b.left   - wsR.left,
+      right:  b.right  - wsR.left,
+      cx:     b.left - wsR.left + b.width  / 2,
+      cy:     b.top  - wsR.top  + b.height / 2,
+    };
   }
 
-  const sub = document.getElementById('substation');
-  const sz  = document.getElementById('supply-zone');
-  const sL = me(sub,'left'), sR = me(sub,'right'), szR = me(sz,'right');
-  const aL = me(document.getElementById('n-a'),'left');
-  const bL = me(document.getElementById('n-b'),'left');
-  const cL = me(document.getElementById('n-c'),'left');
-
-  function ln(p1, p2, cls) {
-    return `<line class="conn-line ${cls}" x1="${p1.x.toFixed(1)}" y1="${p1.y.toFixed(1)}" x2="${p2.x.toFixed(1)}" y2="${p2.y.toFixed(1)}"/>`;
+  function hl(x1, x2, y, cls) {
+    const a = Math.min(x1,x2), b = Math.max(x1,x2);
+    return `<line class="wr ${cls}" x1="${a.toFixed(1)}" y1="${(+y).toFixed(1)}" x2="${b.toFixed(1)}" y2="${(+y).toFixed(1)}"/>`;
+  }
+  function vl(x, y1, y2, cls) {
+    const a = Math.min(y1,y2), b = Math.max(y1,y2);
+    return `<line class="wr ${cls}" x1="${(+x).toFixed(1)}" y1="${a.toFixed(1)}" x2="${(+x).toFixed(1)}" y2="${b.toFixed(1)}"/>`;
   }
 
-  svg.innerHTML =
-    ln(szR, sL, 'supply-line') +
-    ln(sR, aL, nActive.a ? 'active' : 'off') +
-    ln(sR, bL, nActive.b ? 'active' : 'off') +
-    ln(sR, cL, nActive.c ? 'active' : 'off');
+  // SPST switch symbol at (x, y) on a single wire
+  function swSym(x, y, on) {
+    const lx = x - 11, rx = x + 11;
+    const cls = on ? 'sw-on' : 'sw-off';
+    let s = `<circle cx="${lx.toFixed(1)}" cy="${(+y).toFixed(1)}" r="2.5" class="sw-dot ${cls}"/>`;
+    s    += `<circle cx="${rx.toFixed(1)}" cy="${(+y).toFixed(1)}" r="2.5" class="sw-dot ${cls}"/>`;
+    const ax2 = on ? rx : x + 3, ay2 = on ? y : y - 12;
+    s += `<line x1="${lx.toFixed(1)}" y1="${(+y).toFixed(1)}" x2="${ax2.toFixed(1)}" y2="${ay2.toFixed(1)}" class="sw-arm ${cls}"/>`;
+    return s;
+  }
+
+  let h = '';
+
+  // ── HOT + GND rails ───────────────────────────────────────────
+  h += hl(4, W - 4, hotY, 'hot');
+  h += hl(4, W - 4, gndY, 'gnd');
+
+  // ── Central supply items (in supply zone): wire up to rails ──
+  for (const item of placed) {
+    if (item.kind !== 'supply' || item.zone !== 'supply') continue;
+    const el = document.getElementById('pi-' + item.id);
+    if (!el) continue;
+    const r = elR(el);
+    if (!r) continue;
+    h += vl(r.cx - 5, hotY, r.top, 'hot');
+    h += vl(r.cx + 5, gndY, r.top, 'gnd');
+  }
+
+  // ── Substation taps HOT and GND rails ─────────────────────────
+  const sub = gr('substation');
+  if (!sub) { svg.innerHTML = h; return; }
+  h += vl(sub.cx - 5, hotY, sub.top, 'hot');
+  h += vl(sub.cx + 5, gndY, sub.top, 'gnd');
+
+  // ── Sub → switch (hugging sub right) → long run → neighborhood
+  ['a', 'b', 'c'].forEach(nid => {
+    const n = gr('n-' + nid);
+    if (!n) return;
+    const on  = nActive[nid];
+    const cls = on ? 'active' : 'off';
+    const gCls = on ? 'gnd' : 'gnd-d';
+
+    // Switch sits just outside the substation right edge
+    const swx = sub.right + 24;
+    const hy  = n.cy - 5;   // HOT run Y (5px above neighborhood center)
+    const gy  = n.cy + 5;   // GND run Y (5px below)
+
+    // HOT: sub right → switch (right next to sub) → long run → n.left
+    h += hl(sub.right, swx - 11, hy, cls);
+    h += swSym(swx, hy, on);
+    h += hl(swx + 11, n.left, hy, cls);
+
+    // GND: straight run from sub right to n.left (no switch on ground)
+    h += hl(sub.right, n.left, gy, 'gnd');
+
+    // ── Inside neighborhood: vertical bus connecting switch wire
+    //    arrival to the horizontal distribution bus at top of body ──
+    const busHotY = n.top + 27;   // HOT distribution bus
+    const busGndY = n.top + 36;   // GND distribution bus (9px below)
+
+    h += vl(n.left, hy, busHotY, cls);           // connect switch arrival → HOT bus
+    h += vl(n.left, gy, busGndY, 'gnd');         // connect GND arrival → GND bus
+    h += hl(n.left, n.right - 8, busHotY, cls);  // HOT distribution bus across neighborhood
+    h += hl(n.left, n.right - 8, busGndY, 'gnd');// GND distribution bus across neighborhood
+  });
+
+  // ── Items in neighborhoods (demand + local solar): wire to buses
+  for (const item of placed) {
+    if (item.zone === 'supply') continue;
+    const el = document.getElementById('pi-' + item.id);
+    if (!el) continue;
+    const r = elR(el);
+    if (!r) continue;
+    const n = gr('n-' + item.zone);
+    if (!n) continue;
+    const on   = nActive[item.zone];
+    const isLocalSolar = item.kind === 'supply';
+    // Local solar is always live (bypasses substation switch)
+    const hCls = isLocalSolar ? 'hot'               : (on ? 'active' : 'off');
+    const gCls = isLocalSolar ? 'gnd'               : (on ? 'gnd'    : 'gnd-d');
+    const busHotY = n.top + 27;
+    const busGndY = n.top + 36;
+
+    h += vl(r.cx - 5, busHotY, r.top, hCls);
+    h += vl(r.cx + 5, busGndY, r.top, gCls);
+  }
+
+  svg.innerHTML = h;
 }
 
 // ─── Wiring toggle ────────────────────────────────────────────────────────────
@@ -684,6 +915,95 @@ function drawLines() {
 document.getElementById('show-wiring').addEventListener('change', e => {
   document.getElementById('lines').classList.toggle('show', e.target.checked);
 });
+
+// ─── Scenarios ────────────────────────────────────────────────────────────────
+
+function clearAllPlaced() {
+  [...placed].forEach(item => document.getElementById('pi-'+item.id)?.remove());
+  placed = [];
+  ['supply','a','b','c'].forEach(zone => {
+    const body = getContainer(zone);
+    if (!body) return;
+    const hint = body.querySelector('#sz-hint, .nhood-hint');
+    if (hint) hint.style.opacity = '1';
+  });
+}
+
+function loadScenario(scId) {
+  const sc = SCENARIOS[scId];
+  if (!sc) return;
+  currentScenario = scId;
+
+  clearAllPlaced();
+
+  // Reset all neighborhoods to active
+  ['a','b','c'].forEach(nid => {
+    nActive[nid] = true;
+    document.querySelector(`.sub-toggle[data-n="${nid}"]`).className = 'sub-toggle on';
+    document.getElementById('n-'+nid).classList.replace('off','active') || document.getElementById('n-'+nid).classList.add('active');
+    document.getElementById('n-'+nid).classList.remove('off');
+  });
+
+  // Apply conditions
+  activeConds = new Set(sc.conditions);
+  renderConditions();
+
+  // Place items
+  sc.supply.forEach(item => addPlaced(item.type, 'supply', 'supply', item.x, item.y));
+  for (const [zone, items] of Object.entries(sc.demand)) {
+    items.forEach(item => addPlaced(item.type, 'demand', zone, item.x, item.y));
+  }
+
+  // Hide delete buttons on all placed items
+  document.querySelectorAll('.pl-del').forEach(btn => btn.style.display = 'none');
+
+  // Lock palettes
+  document.getElementById('sup-pal').parentElement.classList.add('pal-locked');
+  document.getElementById('dem-pal').parentElement.classList.add('pal-locked');
+
+  // Show banner
+  document.getElementById('sc-goal').textContent = sc.goal;
+  document.getElementById('sc-banner').style.display = 'flex';
+
+  // Mark active tab
+  document.querySelectorAll('.sc-tab').forEach(t => t.classList.toggle('active', t.dataset.sc === scId));
+
+  updateBalance();
+}
+
+function exitScenario() {
+  currentScenario = null;
+  clearAllPlaced();
+
+  activeConds = new Set();
+  renderConditions();
+
+  ['a','b','c'].forEach(nid => {
+    nActive[nid] = true;
+    document.querySelector(`.sub-toggle[data-n="${nid}"]`).className = 'sub-toggle on';
+    document.getElementById('n-'+nid).classList.add('active');
+    document.getElementById('n-'+nid).classList.remove('off');
+  });
+
+  // Unlock palettes
+  document.getElementById('sup-pal').parentElement.classList.remove('pal-locked');
+  document.getElementById('dem-pal').parentElement.classList.remove('pal-locked');
+
+  document.getElementById('sc-banner').style.display = 'none';
+  document.querySelectorAll('.sc-tab').forEach(t => t.classList.remove('active'));
+
+  updateBalance();
+}
+
+document.querySelectorAll('.sc-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const scId = btn.dataset.sc;
+    if (currentScenario === scId) exitScenario();
+    else loadScenario(scId);
+  });
+});
+
+document.getElementById('sc-exit').addEventListener('click', exitScenario);
 
 // ─── Drop zones ───────────────────────────────────────────────────────────────
 
@@ -695,6 +1015,7 @@ szEl.addEventListener('dragover', e => {
 szEl.addEventListener('dragleave', e => { if (!szEl.contains(e.relatedTarget)) szEl.classList.remove('dragover'); });
 szEl.addEventListener('drop', e => {
   e.preventDefault(); szEl.classList.remove('dragover');
+  if (currentScenario) return;
   let d; try { d = JSON.parse(e.dataTransfer.getData('application/json')); } catch { return; }
   if (d.kind !== 'supply') return;
   const br = document.getElementById('sz-body').getBoundingClientRect();
@@ -704,14 +1025,17 @@ szEl.addEventListener('drop', e => {
 ['a','b','c'].forEach(nid => {
   const el = document.getElementById('n-'+nid);
   el.addEventListener('dragover', e => {
-    if (draggingKind !== 'demand') return;
+    const ok = draggingKind === 'demand' || (draggingKind === 'supply' && draggingType === 'solar');
+    if (!ok) return;
     e.preventDefault(); el.classList.add('nhood-dragover');
   });
   el.addEventListener('dragleave', e => { if (!el.contains(e.relatedTarget)) el.classList.remove('nhood-dragover'); });
   el.addEventListener('drop', e => {
     e.preventDefault(); el.classList.remove('nhood-dragover');
+    if (currentScenario) return;
     let d; try { d = JSON.parse(e.dataTransfer.getData('application/json')); } catch { return; }
-    if (d.kind !== 'demand') return;
+    const ok = d.kind === 'demand' || (d.kind === 'supply' && d.type === 'solar');
+    if (!ok) return;
     const br = document.getElementById('nb-'+nid).getBoundingClientRect();
     addPlaced(d.type, 'demand', nid, e.clientX-br.left-54, e.clientY-br.top-24);
   });
@@ -759,6 +1083,7 @@ function removePlaced(id) {
 
 function onItemMouseDown(e) {
   if (e.target.classList.contains('pl-del')) return;
+  if (currentScenario) return;
   e.preventDefault();
   const el = e.currentTarget;
   const id = parseInt(el.id.replace('pi-',''));
@@ -780,6 +1105,7 @@ document.addEventListener('mousemove', e => {
   el.style.left = x+'px'; el.style.top = y+'px';
   const item = placed.find(i => i.id === movingId);
   if (item) { item.x = x; item.y = y; }
+  drawLines();
 });
 
 document.addEventListener('mouseup', () => {
@@ -798,7 +1124,7 @@ document.querySelectorAll('.sub-toggle').forEach(btn => {
     btn.className = 'sub-toggle '+(nActive[nid]?'on':'off');
     document.getElementById('n-'+nid).classList.toggle('active',  nActive[nid]);
     document.getElementById('n-'+nid).classList.toggle('off',    !nActive[nid]);
-    drawLines(); updateBalance();
+    updateBalance();
   });
 });
 
@@ -812,8 +1138,12 @@ function updateBalance() {
     const { kw, offline } = effectiveKW(item.type, item.kind);
     const el = document.getElementById('pi-'+item.id);
     if (el) { el.querySelector('.pl-kw').textContent = fmt(kw); el.classList.toggle('offline', offline); }
-    if (item.kind === 'supply') totalS += kw;
-    else nDemand[item.zone] = (nDemand[item.zone]||0) + kw;
+    if (item.kind === 'supply') {
+      if (item.zone === 'supply') totalS += kw;
+      else nDemand[item.zone] = (nDemand[item.zone]||0) - kw; // local solar offsets demand
+    } else {
+      nDemand[item.zone] = (nDemand[item.zone]||0) + kw;
+    }
   }
 
   document.getElementById('sz-total').textContent = fmt(totalS);
@@ -837,6 +1167,7 @@ function updateBalance() {
   else                               { badge.textContent = fmt(Math.abs(diff))+' deficit'; badge.className = 'deficit';  }
 
   updateChart(totalS, totalD);
+  drawLines();
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
