@@ -410,19 +410,41 @@ body {
   box-shadow: 0 2px 8px rgba(0,0,0,.5);
   transition: box-shadow .15s; z-index: 2;
 }
+.placed.sz-xs { width: 88px; }
+.placed.sz-sm { width: 100px; }
+.placed.sz-md { width: 116px; }
+.placed.sz-lg { width: 136px; }
+.placed.sz-xl { width: 164px; }
 .placed:hover { box-shadow: 0 4px 16px rgba(0,0,0,.7); }
 .placed.supply { border-top: 2px solid var(--supply); }
 .placed.demand { border-top: 2px solid var(--demand); }
-.pl-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 4px; }
-.pl-title { font-size: 9px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 3px; }
+.pl-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px; }
+.pl-title { font-size: 9px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 3px; white-space: nowrap; overflow: hidden; }
 .pl-del { border: none; background: transparent; color: var(--dim); cursor: pointer; font-size: 13px; line-height: 1; padding: 0 0 0 3px; flex-shrink: 0; }
 .pl-del:hover { color: var(--danger); }
-.pl-kw { font-size: 13px; font-weight: 800; }
+.pl-bottom { display: flex; align-items: center; gap: 5px; }
+.pl-kw { font-size: 13px; font-weight: 800; flex-shrink: 0; font-variant-numeric: tabular-nums; }
 .placed.supply .pl-kw { color: var(--supply); }
 .placed.demand .pl-kw { color: var(--demand); }
 .placed.offline .pl-kw { opacity: .3; text-decoration: line-through; }
-.pl-off-tag { display: none; font-size: 8px; font-weight: 700; color: var(--danger); letter-spacing: .06em; margin-top: 2px; }
-.placed.offline .pl-off-tag { display: block; }
+.pl-slots { flex: 1; display: flex; gap: 2px; align-items: center; }
+.solar-slot {
+  flex: 1; height: 11px; border-radius: 2px;
+  border: 1px solid rgba(34,197,94,.2);
+  background: rgba(34,197,94,.04);
+  transition: background .12s, border-color .12s;
+  cursor: default;
+}
+.solar-slot.filled {
+  background: rgba(34,197,94,.28);
+  border-color: rgba(34,197,94,.55);
+  cursor: pointer;
+}
+.solar-slot.filled:hover {
+  background: rgba(239,68,68,.18);
+  border-color: rgba(239,68,68,.5);
+}
+.placed.solar-target { outline: 2px solid var(--supply); outline-offset: 2px; }
 </style>
 </head>
 <body>
@@ -560,14 +582,14 @@ const SUPPLY = {
 };
 
 const DEMAND = {
-  house:      { label: 'House',          icon: '🏠', baseKW: 3,   spec: '3'  },
-  hospital:   { label: 'Hospital',       icon: '🏥', baseKW: 20,  spec: '20' },
-  restaurant: { label: 'Restaurant',     icon: '🍽️', baseKW: 5,   spec: '5'  },
-  store:      { label: 'Store',          icon: '🏪', baseKW: 5,   spec: '5'  },
-  police:     { label: 'Police Station', icon: '🚔', baseKW: 10,  spec: '10' },
-  school:     { label: 'School',         icon: '🏫', baseKW: 10,  spec: '10' },
-  factory:    { label: 'Factory',        icon: '🏗️', baseKW: 40,  spec: '40' },
-  apartment:  { label: 'Apartment',      icon: '🏢', baseKW: 10,  spec: '10' },
+  house:      { label: 'House',          icon: '🏠', baseKW: 3,  spec: '3',  size: 'xs', maxSolar: 1 },
+  restaurant: { label: 'Restaurant',     icon: '🍽️', baseKW: 5,  spec: '5',  size: 'sm', maxSolar: 2 },
+  store:      { label: 'Store',          icon: '🏪', baseKW: 5,  spec: '5',  size: 'sm', maxSolar: 2 },
+  police:     { label: 'Police Station', icon: '🚔', baseKW: 10, spec: '10', size: 'sm', maxSolar: 2 },
+  apartment:  { label: 'Apartment',      icon: '🏢', baseKW: 10, spec: '10', size: 'md', maxSolar: 3 },
+  school:     { label: 'School',         icon: '🏫', baseKW: 10, spec: '10', size: 'md', maxSolar: 3 },
+  hospital:   { label: 'Hospital',       icon: '🏥', baseKW: 20, spec: '20', size: 'lg', maxSolar: 4 },
+  factory:    { label: 'Factory',        icon: '🏗️', baseKW: 40, spec: '40', size: 'xl', maxSolar: 8 },
 };
 
 const CONDITIONS = [
@@ -1025,8 +1047,7 @@ szEl.addEventListener('drop', e => {
 ['a','b','c'].forEach(nid => {
   const el = document.getElementById('n-'+nid);
   el.addEventListener('dragover', e => {
-    const ok = draggingKind === 'demand' || (draggingKind === 'supply' && draggingType === 'solar');
-    if (!ok) return;
+    if (draggingKind !== 'demand') return;
     e.preventDefault(); el.classList.add('nhood-dragover');
   });
   el.addEventListener('dragleave', e => { if (!el.contains(e.relatedTarget)) el.classList.remove('nhood-dragover'); });
@@ -1034,8 +1055,7 @@ szEl.addEventListener('drop', e => {
     e.preventDefault(); el.classList.remove('nhood-dragover');
     if (currentScenario) return;
     let d; try { d = JSON.parse(e.dataTransfer.getData('application/json')); } catch { return; }
-    const ok = d.kind === 'demand' || (d.kind === 'supply' && d.type === 'solar');
-    if (!ok) return;
+    if (d.kind !== 'demand') return;
     const br = document.getElementById('nb-'+nid).getBoundingClientRect();
     addPlaced(d.type, 'demand', nid, e.clientX-br.left-54, e.clientY-br.top-24);
   });
@@ -1047,19 +1067,66 @@ function getContainer(zone) {
   return document.getElementById(zone === 'supply' ? 'sz-body' : 'nb-'+zone);
 }
 
+function syncSlots(el, item) {
+  el.querySelectorAll('.solar-slot').forEach((s, i) => s.classList.toggle('filled', i < item.solarCount));
+}
+
 function addPlaced(type, kind, zone, x, y) {
   const id = nextId++;
-  placed.push({ id, type, kind, zone, x, y });
+  placed.push({ id, type, kind, zone, x, y, solarCount: 0 });
   const def = kind === 'supply' ? SUPPLY[type] : DEMAND[type];
   const { kw, offline } = effectiveKW(type, kind);
   const body = getContainer(zone);
   const el = document.createElement('div');
   el.id = 'pi-'+id;
-  el.className = 'placed '+kind+(offline?' offline':'');
+  const sizeClass = def.size ? ' sz-'+def.size : '';
+  el.className = 'placed '+kind+sizeClass+(offline?' offline':'');
   el.style.left = Math.max(4,x)+'px'; el.style.top = Math.max(4,y)+'px';
-  el.innerHTML = `<div class="pl-head"><div class="pl-title">${def.icon} ${def.label}</div><button class="pl-del">×</button></div><div class="pl-kw">${fmt(kw)}</div><div class="pl-off-tag">OFFLINE</div>`;
+
+  const slotsHTML = (kind === 'demand' && def.maxSolar)
+    ? `<div class="pl-slots"></div>` : '';
+  const offlineHTML = kind === 'supply' ? `<div class="pl-off-tag">OFFLINE</div>` : '';
+  el.innerHTML = `<div class="pl-head"><div class="pl-title">${def.icon} ${def.label}</div><button class="pl-del">×</button></div><div class="pl-bottom"><div class="pl-kw">${fmt(kw)}</div>${slotsHTML}</div>${offlineHTML}`;
+
   el.querySelector('.pl-del').addEventListener('click', e => { e.stopPropagation(); removePlaced(id); });
   el.addEventListener('mousedown', onItemMouseDown);
+
+  // Build solar slots for demand items
+  if (kind === 'demand' && def.maxSolar) {
+    const slotsEl = el.querySelector('.pl-slots');
+    for (let i = 0; i < def.maxSolar; i++) {
+      const slot = document.createElement('div');
+      slot.className = 'solar-slot';
+      slot.addEventListener('click', e => {
+        e.stopPropagation();
+        const item = placed.find(p => p.id === id);
+        if (!item || !slot.classList.contains('filled')) return;
+        item.solarCount--;
+        updateBalance();
+      });
+      slotsEl.appendChild(slot);
+    }
+
+    // Accept dropped solar arrays
+    el.addEventListener('dragover', e => {
+      if (draggingKind !== 'supply' || draggingType !== 'solar') return;
+      const item = placed.find(i => i.id === id);
+      if (!item || item.solarCount >= def.maxSolar) return;
+      e.preventDefault(); e.stopPropagation();
+      el.classList.add('solar-target');
+    });
+    el.addEventListener('dragleave', () => el.classList.remove('solar-target'));
+    el.addEventListener('drop', e => {
+      if (draggingKind !== 'supply' || draggingType !== 'solar') return;
+      e.preventDefault(); e.stopPropagation();
+      el.classList.remove('solar-target');
+      const item = placed.find(i => i.id === id);
+      if (!item || item.solarCount >= def.maxSolar) return;
+      item.solarCount++;
+      updateBalance();
+    });
+  }
+
   body.appendChild(el);
   const hint = body.querySelector('#sz-hint, .nhood-hint');
   if (hint) hint.style.opacity = '0';
@@ -1137,12 +1204,21 @@ function updateBalance() {
   for (const item of placed) {
     const { kw, offline } = effectiveKW(item.type, item.kind);
     const el = document.getElementById('pi-'+item.id);
-    if (el) { el.querySelector('.pl-kw').textContent = fmt(kw); el.classList.toggle('offline', offline); }
+    if (el) el.classList.toggle('offline', offline);
+
     if (item.kind === 'supply') {
-      if (item.zone === 'supply') totalS += kw;
-      else nDemand[item.zone] = (nDemand[item.zone]||0) - kw; // local solar offsets demand
+      if (el) el.querySelector('.pl-kw').textContent = fmt(kw);
+      totalS += kw;
     } else {
-      nDemand[item.zone] = (nDemand[item.zone]||0) + kw;
+      // Subtract attached solar from this item's individual demand
+      let netKW = kw;
+      if (item.solarCount) {
+        const { kw: solarKW, offline: solarOff } = effectiveKW('solar', 'supply');
+        if (!solarOff) netKW = Math.max(0, kw - solarKW * item.solarCount);
+      }
+      if (el) el.querySelector('.pl-kw').textContent = fmt(netKW);
+      if (el) syncSlots(el, item);
+      nDemand[item.zone] = (nDemand[item.zone]||0) + netKW;
     }
   }
 
